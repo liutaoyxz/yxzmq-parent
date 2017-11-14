@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.exception;
+package com.liutaoyxz.yxzmq.broker.exception;
 
 public class MQException extends Exception {
     public MQException() {
