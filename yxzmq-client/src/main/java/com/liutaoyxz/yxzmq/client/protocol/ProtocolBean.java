@@ -10,22 +10,22 @@ public class ProtocolBean {
     /**
      * 数据class name
      */
-    private String DataClass;
+    private String dataClass;
 
     /**
      * 数据序列化内容
      */
-    private byte[] DataText;
+    private byte[] dataText;
 
     /**
      * 命令 class name
      */
-    private String CommandClass;
+    private String commandClass;
 
     /**
      * 命令序列化内容
      */
-    private byte[] CommandText;
+    private byte[] commandText;
 
     /**
      * 元数据序列化内容
@@ -33,35 +33,35 @@ public class ProtocolBean {
     private byte[] metadataText;
 
     public String getDataClass() {
-        return DataClass;
+        return dataClass;
     }
 
     public void setDataClass(String dataClass) {
-        DataClass = dataClass;
+        this.dataClass = dataClass;
     }
 
     public byte[] getDataText() {
-        return DataText;
+        return dataText;
     }
 
     public void setDataText(byte[] dataText) {
-        DataText = dataText;
+        this.dataText = dataText;
     }
 
     public String getCommandClass() {
-        return CommandClass;
+        return commandClass;
     }
 
     public void setCommandClass(String commandClass) {
-        CommandClass = commandClass;
+        this.commandClass = commandClass;
     }
 
     public byte[] getCommandText() {
-        return CommandText;
+        return commandText;
     }
 
     public void setCommandText(byte[] commandText) {
-        CommandText = commandText;
+        this.commandText = commandText;
     }
 
     public byte[] getMetadataText() {
@@ -75,10 +75,10 @@ public class ProtocolBean {
     @Override
     public String toString() {
         return "ProtocolBean{" +
-                "DataClass='" + DataClass + '\'' +
-                ", DataText=" + Arrays.toString(DataText) +
-                ", CommandClass='" + CommandClass + '\'' +
-                ", CommandText=" + Arrays.toString(CommandText) +
+                "dataClass='" + dataClass + '\'' +
+                ", dataText=" + Arrays.toString(dataText) +
+                ", commandClass='" + commandClass + '\'' +
+                ", commandText=" + Arrays.toString(commandText) +
                 ", metadataText=" + Arrays.toString(metadataText) +
                 '}';
     }
