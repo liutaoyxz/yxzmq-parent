@@ -103,7 +103,7 @@ public class DefaultServer implements Server {
             if (key.isReadable()) {
                 // 读取数据
                 SocketChannel socketChannel = (SocketChannel) key.channel();
-                ByteBuffer buffer = ByteBuffer.allocate(2048);
+                ByteBuffer buffer = ByteBuffer.allocate(10);
                 readLoop:
                 while (true) {
                     int readCount = socketChannel.read(buffer);
