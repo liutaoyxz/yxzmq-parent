@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Doug Tao
@@ -20,6 +22,8 @@ public class YxzClient implements Client{
 
     private String address;
 
+    private Lock lock = new ReentrantLock();
+
     private volatile boolean isReading = false;
 
     public YxzClient(String clientId, SocketChannel channel, String address) {
@@ -35,17 +39,38 @@ public class YxzClient implements Client{
 
     @Override
     public void startRead() {
-        if (channel == null){
-            throw new NullPointerException("startRead,but channel is null");
+        if (!isReading){
+            lock.lock();
+            try {
+                if (!isReading){
+                    if (channel == null){
+                        throw new NullPointerException("startRead,but channel is null");
+                    }
+                    if (!channel.isOpen()){
+                        LOG.info("startRead,but channel is not open,address is {}",address);
+                    }
+                    if (!channel.isConnected()){
+                        LOG.info("startRead,but channel is not connected,address is {}",address);
+                    }
+                    this.isReading = true;
+                    LOG.info("client start read,address is {}",address);
+                }
+            }finally {
+                lock.unlock();
+            }
         }
-        if (!channel.isOpen()){
-            LOG.info("startRead,but channel is not open,address is {}",address);
+
+
+    }
+
+    @Override
+    public void stopRead() {
+        lock.lock();
+        try {
+            this.isReading = false;
+        }finally {
+            lock.unlock();
         }
-        if (!channel.isConnected()){
-            LOG.info("startRead,but channel is not connected,address is {}",address);
-        }
-        this.isReading = true;
-        LOG.info("client start read,address is {}",address);
     }
 
     @Override

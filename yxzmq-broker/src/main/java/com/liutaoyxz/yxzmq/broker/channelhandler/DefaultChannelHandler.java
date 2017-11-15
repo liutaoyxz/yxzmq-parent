@@ -32,8 +32,15 @@ public class DefaultChannelHandler extends AbstractChannelHandler {
 
     @Override
     public boolean disconnect(SocketChannel channel) {
-        check(channel);
+        if (channel == null){
+            //连接已经中断
+            return true;
+        }
         YxzClient client = client(channel);
+        if (client == null){
+            //连接已经中断
+            return true;
+        }
         String remoteAddress = client.address();
         log.info("client disconnected,client is {}", client);
         try {

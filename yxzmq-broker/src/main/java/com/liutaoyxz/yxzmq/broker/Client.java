@@ -41,4 +41,6 @@ public interface Client {
      */
     SocketChannel channel();
 
+    void stopRead();
+
 }

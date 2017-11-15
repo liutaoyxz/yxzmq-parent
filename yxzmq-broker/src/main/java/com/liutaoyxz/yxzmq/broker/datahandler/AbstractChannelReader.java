@@ -41,15 +41,25 @@ public abstract class AbstractChannelReader implements ChannelReader {
 
     @Override
     public void startRead(final Client client) {
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
+        if (client.reading()){
+            return ;
+        }
+
+//        executorService.execute(new Runnable() {
+//            @Override
+//            public void run() {
                 try {
+                    client.startRead();
                     SocketChannel socketChannel = client.channel();
                     ByteBuffer buffer = ByteBuffer.allocate(headerSize);
                     // TODO: 2017/11/15 read 时抛出IOException 初步判断为连接已经中断
                     //读取协议头
                     int readCount = socketChannel.read(buffer);
+                    if (readCount == -1){
+                        //连接中断
+                        handler.disconnect(socketChannel);
+                        return;
+                    }
                     if (readCount == 0){
                         return;
                     }
@@ -59,22 +69,26 @@ public abstract class AbstractChannelReader implements ChannelReader {
 
                         return ;
                     }
-                    int metaDateSize = Integer.valueOf(new String(buffer.array(),DEFAULT_CHARSET));
-                    buffer = ByteBuffer.allocate(metaDateSize);
-                    while (buffer.position() < metaDateSize){
-                        socketChannel.read(buffer);
-                    }
-                    buffer.flip();
-                    Metadata metadata = ProtostuffUtil.get(buffer.array(), Metadata.class);
-                    log.debug("read from client,clientId is {},metadata is {}",client.id(),metadata);
-
-                    buffer.clear();
+                    log.debug("receive msg,msg is {}",new String(buffer.array(),DEFAULT_CHARSET));
+//                    int metaDateSize = Integer.valueOf(new String(buffer.array(),DEFAULT_CHARSET));
+//                    log.debug("read metaDateSize,size is {}",metaDateSize);
+//                    buffer = ByteBuffer.allocate(metaDateSize);
+//                    while (buffer.position() < metaDateSize){
+//                        socketChannel.read(buffer);
+//                    }
+//                    buffer.flip();
+//                    Metadata metadata = ProtostuffUtil.get(buffer.array(), Metadata.class);
+//                    log.debug("read from client,clientId is {},metadata is {}",client.id(),metadata);
+//
+//                    buffer.clear();
                     return ;
                 } catch (IOException e) {
                     log.error("read from client error",e);
                     handler.disconnect(client.channel());
+                }finally {
+                    client.stopRead();
                 }
-            }
-        });
+//            }
+//        });
     }
 }

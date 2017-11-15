@@ -44,7 +44,12 @@ public class SendDataTest {
         String ml = ProtostuffUtil.fillMetadataLength(mdBytes.length);
         ByteBuffer byteBuffer = ByteBuffer.allocate(10 + mdBytes.length);
         byteBuffer.put(ml.getBytes("utf-8"));
-        byteBuffer.put(mdBytes,10,mdBytes.length);
+        socketChannel.write(byteBuffer);
+
+        while (byteBuffer.hasRemaining()){
+            socketChannel.write(byteBuffer);
+        }
+        byteBuffer.put(mdBytes);
 
 
         socketChannel.write(byteBuffer);

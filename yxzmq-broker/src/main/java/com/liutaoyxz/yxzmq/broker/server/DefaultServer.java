@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.server;
 
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
+import com.liutaoyxz.yxzmq.broker.YxzClient;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
 import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
 import com.liutaoyxz.yxzmq.broker.datahandler.DefaultChannelReader;
@@ -55,12 +56,14 @@ public class DefaultServer extends AbstractServer {
                 if (stopFlag) {
                     break;
                 }
+                // TODO: 2017/11/15 当开启select() 之后, read 事件是接收到信息才会触发select(), write事件在server端会一直触发,知道切换为止
                 ic = selector.select();
                 if (ic > 0) {
                     Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
                     while (keys.hasNext()) {
                         try {
                             SelectionKey key = keys.next();
+//                            key.cancel();
                             handleKey(key);
                         } finally {
                             keys.remove();
@@ -101,11 +104,22 @@ public class DefaultServer extends AbstractServer {
             if (key.isReadable()) {
                 // 读取数据
                 socketChannel = (SocketChannel)key.channel();
-                reader.startRead(channelHandler.client(socketChannel));
-                key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                YxzClient client = channelHandler.client(socketChannel);
+                if (client != null){
+                    reader.startRead(client);
+//                    socketChannel.register(selector,SelectionKey.OP_WRITE);
+//                    key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                    key.interestOps(SelectionKey.OP_READ);
+                }
+
             }
             if (key.isWritable()) {
                 // 等待写入状态
+                log.debug("key is writable");
+                socketChannel = (SocketChannel)key.channel();
+//                socketChannel.register(selector,SelectionKey.OP_READ);
+//                key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                key.interestOps(SelectionKey.OP_READ);
             }
         } catch (CancelledKeyException e) {
             channelHandler.disconnect(socketChannel);
