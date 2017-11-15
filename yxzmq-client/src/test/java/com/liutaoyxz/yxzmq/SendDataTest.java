@@ -45,10 +45,11 @@ public class SendDataTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(10 + mdBytes.length);
         byteBuffer.put(ml.getBytes("utf-8"));
         socketChannel.write(byteBuffer);
-
+        byteBuffer.flip();
         while (byteBuffer.hasRemaining()){
             socketChannel.write(byteBuffer);
         }
+        byteBuffer.clear();
         byteBuffer.put(mdBytes);
 
 
