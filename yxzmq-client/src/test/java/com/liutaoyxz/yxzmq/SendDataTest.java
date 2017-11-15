@@ -49,7 +49,7 @@ public class SendDataTest {
 //        socketChannel.register(selector, SelectionKey.OP_READ);
         socketChannel.connect(new InetSocketAddress(11171));
         String msg = "client msg ->";
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             msg += "client msg -> "+i;
         }
 

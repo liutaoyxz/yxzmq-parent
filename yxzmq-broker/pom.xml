@@ -22,6 +22,7 @@
         <dependency>
             <groupId>com.liutaoyxz.yxzmq</groupId>
             <artifactId>yxzmq-client</artifactId>
+            <version>${parent.version}</version>
         </dependency>
 
         <dependency>
@@ -48,5 +49,16 @@
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
     </dependencies>
 </project>

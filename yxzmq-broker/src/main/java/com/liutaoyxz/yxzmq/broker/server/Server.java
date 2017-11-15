@@ -1,4 +1,6 @@
-package com.liutaoyxz.yxzmq.broker;
+package com.liutaoyxz.yxzmq.broker.server;
+
+import com.liutaoyxz.yxzmq.broker.ServerConfig;
 
 /**
  * broker server

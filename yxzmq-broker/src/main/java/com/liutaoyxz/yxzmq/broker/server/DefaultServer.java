@@ -1,5 +1,8 @@
-package com.liutaoyxz.yxzmq.broker;
+package com.liutaoyxz.yxzmq.broker.server;
 
+import com.liutaoyxz.yxzmq.broker.ServerConfig;
+import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
+import com.liutaoyxz.yxzmq.broker.channelhandler.DefaultChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,33 +12,34 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.util.Iterator;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+
 
 /**
- * default server
+ * @author Doug Tao
+ * @Date: 9:15 2017/11/15
+ * @Description:
  */
-public class DefaultServer implements Server {
+public class DefaultServer extends AbstractServer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServer.class);
-
-    private static final String DEFAULT_CHARSET = "utf-8";
-
-    private ServerConfig config;
-
-    private Lock lock = new ReentrantLock();
-
-    private Condition sync = lock.newCondition();
 
     private volatile boolean stopFlag = false;
 
     private Selector selector;
 
+    private DefaultServer(Logger log, ChannelHandler handler) {
+        super(log,handler);
+    }
+
+    public DefaultServer(){
+        this(LoggerFactory.getLogger(DefaultServer.class),new DefaultChannelHandler());
+    }
+
+
+
+    @Override
     public void start() {
         try {
 
-            lock.lock();
             if (config == null) {
                 config = new ServerConfig();
             }
@@ -44,7 +48,7 @@ public class DefaultServer implements Server {
             channel.configureBlocking(false);
             channel.socket().bind(new InetSocketAddress(config.getPort()));
             SelectionKey register = channel.register(selector, SelectionKey.OP_ACCEPT);
-            LOGGER.info("yxzserver started on port {}", config.getPort());
+            log.info("yxzserver started on port {}", config.getPort());
             int ic = 0;
             for (; ; ) {
                 if (stopFlag) {
@@ -64,28 +68,20 @@ public class DefaultServer implements Server {
                 }
             }
 
-            sync.await();
-        } catch (InterruptedException e) {
-            LOGGER.info("server interrupted", e);
         } catch (IOException e) {
-            LOGGER.error("start error", e);
+            log.error("start error", e);
         } finally {
-            lock.unlock();
         }
 
     }
 
+    @Override
     public void stop() {
         this.stopFlag = true;
         System.exit(0);
     }
 
-    public Server setConfig(ServerConfig config) {
-        if (config == null) {
-            throw new NullPointerException("config can not be null");
-        }
-        return this;
-    }
+
 
     /**
      * 处理key
@@ -93,19 +89,21 @@ public class DefaultServer implements Server {
      * @throws IOException
      */
     private void handleKey(SelectionKey key) throws IOException {
+        SocketChannel socketChannel = null;
         try {
             if (key.isAcceptable()) {
-                LOGGER.info("client connected");
-                SocketChannel clientChannel = ((ServerSocketChannel) key.channel()).accept();
-                clientChannel.configureBlocking(false);
-                clientChannel.register(selector, SelectionKey.OP_READ, ByteBuffer.allocate(128));
+                socketChannel = ((ServerSocketChannel) key.channel()).accept();
+                socketChannel.configureBlocking(false);
+                socketChannel.register(selector, SelectionKey.OP_READ, ByteBuffer.allocate(128));
+                channelHandler.connect(socketChannel);
             }
             if (key.isReadable()) {
                 // 读取数据
-                SocketChannel socketChannel = (SocketChannel) key.channel();
+                socketChannel = (SocketChannel) key.channel();
                 ByteBuffer buffer = ByteBuffer.allocate(10);
                 readLoop:
                 while (true) {
+                    // TODO: 2017/11/15 read 时抛出IOException 初步判断为连接已经中断
                     int readCount = socketChannel.read(buffer);
                     if (readCount == -1) {
                         // 连接已经关闭
@@ -118,9 +116,9 @@ public class DefaultServer implements Server {
                     }
                     buffer.flip();
                     String msg = Charset.forName(DEFAULT_CHARSET).decode(buffer).toString();
-                    LOGGER.info("receive message : {}", msg);
+                    log.info("receive message : {}", msg);
                     if (msg != null && msg.equals("stop")){
-                        LOGGER.info("server stop");
+                        log.info("server stop");
                         stop();
                     }
                     buffer.clear();
@@ -131,7 +129,9 @@ public class DefaultServer implements Server {
                 // 等待写入状态
             }
         } catch (CancelledKeyException e) {
-            LOGGER.info("channel is cancelled");
+            channelHandler.disconnect(socketChannel);
+        } catch (IOException e){
+            channelHandler.disconnect(socketChannel);
         }
     }
 
