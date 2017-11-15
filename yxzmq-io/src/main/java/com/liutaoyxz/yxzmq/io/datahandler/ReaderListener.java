@@ -1,5 +1,7 @@
 package com.liutaoyxz.yxzmq.io.datahandler;
 
+import com.liutaoyxz.yxzmq.io.protocol.Message;
+
 /**
  * @author Doug Tao
  * @Date: 14:05 2017/11/15
@@ -8,6 +10,10 @@ package com.liutaoyxz.yxzmq.io.datahandler;
 public interface ReaderListener {
 
 
-    void readComplete();
+    /**
+     * 读取到服务器发来的消息,触发此监听器进行处理
+     * @param message
+     */
+    void receiveMessage(Message message);
 
 }

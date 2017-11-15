@@ -10,6 +10,6 @@ public interface BaseData {
      * 获取数据的字符串内容
      * @return
      */
-    byte[] getContent();
+    Message getContent();
 
 }
