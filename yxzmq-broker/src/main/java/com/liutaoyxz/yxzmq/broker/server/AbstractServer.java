@@ -2,10 +2,8 @@ package com.liutaoyxz.yxzmq.broker.server;
 
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
+import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.nio.channels.Selector;
 
 /**
  * @author Doug Tao
@@ -22,22 +20,14 @@ public abstract class AbstractServer implements Server {
 
     protected ChannelHandler channelHandler;
 
-    protected AbstractServer(Logger log,ChannelHandler channelHandler) {
+    protected ChannelReader reader;
+
+    protected AbstractServer(Logger log,ChannelHandler channelHandler,ChannelReader reader) {
         this.log = log;
         this.channelHandler = channelHandler;
+        this.reader = reader;
     }
 
-    /**
-     * server 启动
-     */
-    @Override
-    public abstract void start();
-
-    /**
-     * server  终止
-     */
-    @Override
-    public abstract void stop();
 
     @Override
     public Server setConfig(ServerConfig config) {

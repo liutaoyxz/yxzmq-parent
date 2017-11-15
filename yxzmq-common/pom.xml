@@ -7,10 +7,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>yxzmq-io</artifactId>
+    <artifactId>yxzmq-common</artifactId>
     <packaging>jar</packaging>
 
-    <name>yxzmq-io</name>
+    <name>yxzmq-common</name>
     <url>http://maven.apache.org</url>
 
     <properties>
@@ -18,20 +18,6 @@
     </properties>
 
     <dependencies>
-
-
-        <!-- protostuff -->
-        <dependency>
-            <groupId>io.protostuff</groupId>
-            <artifactId>protostuff-core</artifactId>
-            <!--<scope>test</scope>-->
-        </dependency>
-
-        <dependency>
-            <groupId>io.protostuff</groupId>
-            <artifactId>protostuff-runtime</artifactId>
-            <!--<scope>test</scope>-->
-        </dependency>
 
     </dependencies>
 </project>

@@ -2,7 +2,8 @@ package com.liutaoyxz.yxzmq.broker.server;
 
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
-import com.liutaoyxz.yxzmq.broker.channelhandler.DefaultChannelHandler;
+import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
+import com.liutaoyxz.yxzmq.broker.datahandler.DefaultChannelReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +11,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.nio.charset.Charset;
 import java.util.Iterator;
 
 
@@ -26,12 +26,13 @@ public class DefaultServer extends AbstractServer {
 
     private Selector selector;
 
-    private DefaultServer(Logger log, ChannelHandler handler) {
-        super(log,handler);
+    private DefaultServer(Logger log, ChannelHandler handler, ChannelReader reader) {
+        super(log,handler,reader);
     }
 
-    public DefaultServer(){
-        this(LoggerFactory.getLogger(DefaultServer.class),new DefaultChannelHandler());
+    public DefaultServer(ChannelHandler handler){
+//        DefaultChannelHandler defaultChannelHandler = new DefaultChannelHandler();
+        this(LoggerFactory.getLogger(DefaultServer.class),handler,new DefaultChannelReader(handler));
     }
 
 
@@ -99,30 +100,8 @@ public class DefaultServer extends AbstractServer {
             }
             if (key.isReadable()) {
                 // 读取数据
-                socketChannel = (SocketChannel) key.channel();
-                ByteBuffer buffer = ByteBuffer.allocate(10);
-                readLoop:
-                while (true) {
-                    // TODO: 2017/11/15 read 时抛出IOException 初步判断为连接已经中断
-                    int readCount = socketChannel.read(buffer);
-                    if (readCount == -1) {
-                        // 连接已经关闭
-                        socketChannel.close();
-                        break readLoop;
-                    }
-                    if (readCount == 0) {
-                        //没有内容
-                        break readLoop;
-                    }
-                    buffer.flip();
-                    String msg = Charset.forName(DEFAULT_CHARSET).decode(buffer).toString();
-                    log.info("receive message : {}", msg);
-                    if (msg != null && msg.equals("stop")){
-                        log.info("server stop");
-                        stop();
-                    }
-                    buffer.clear();
-                }
+                socketChannel = (SocketChannel)key.channel();
+                reader.startRead(channelHandler.client(socketChannel));
                 key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
             }
             if (key.isWritable()) {

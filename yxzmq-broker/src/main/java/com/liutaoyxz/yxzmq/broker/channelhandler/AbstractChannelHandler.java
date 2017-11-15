@@ -1,6 +1,6 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
-import com.liutaoyxz.yxzmq.client.YxzClient;
+import com.liutaoyxz.yxzmq.broker.YxzClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -25,21 +25,6 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
         this.log = log;
     }
 
-    /**
-     * 连接处理
-     * @param channel
-     * @return
-     */
-    @Override
-    public abstract boolean connect(SocketChannel channel);
-
-    /**
-     * 断连处理
-     * @param channel
-     * @return
-     */
-    @Override
-    public abstract boolean disconnect(SocketChannel channel);
 
     protected YxzClient addClient(SocketChannel channel){
         check(channel);

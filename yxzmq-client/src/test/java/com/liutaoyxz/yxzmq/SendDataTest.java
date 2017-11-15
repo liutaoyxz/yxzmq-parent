@@ -1,8 +1,6 @@
 package com.liutaoyxz.yxzmq;
 
-import com.liutaoyxz.yxzmq.io.protocol.DefaultStringData;
-import com.liutaoyxz.yxzmq.io.protocol.Metadata;
-import com.liutaoyxz.yxzmq.io.protocol.TestCommand;
+import com.liutaoyxz.yxzmq.io.protocol.*;
 import com.liutaoyxz.yxzmq.io.util.ProtostuffUtil;
 
 import java.io.IOException;
@@ -21,20 +19,8 @@ public class SendDataTest {
 
     public static void main(String[] args) throws IOException {
 
-        Metadata metadata = new Metadata();
-        metadata.setCreateTime(System.currentTimeMillis());
-        metadata.setCliendId("xxxxxidhid22");
-        DefaultStringData data = new DefaultStringData();
-        data.setText("thisisdata");
-        TestCommand command = new TestCommand();
-        byte[] dataBytes = ProtostuffUtil.serializable(data);
-        byte[] commondBytes = ProtostuffUtil.serializable(command);
-        metadata.setDataLenght(dataBytes.length);
-        metadata.setCommandLenght(commondBytes.length);
-        byte[] metadataBytes = ProtostuffUtil.serializable(metadata);
-        System.out.println(Arrays.toString(metadataBytes));
-        String msl = ProtostuffUtil.fillMetadataLength(metadataBytes.length);
-        System.out.println(msl);
+//        Metadata metadata = new Metadata();
+
 
         testSend();
     }
@@ -45,16 +31,29 @@ public class SendDataTest {
 //        socketChannel.configureBlocking(false);
 //        socketChannel.register(selector, SelectionKey.OP_READ);
         socketChannel.connect(new InetSocketAddress(11171));
-        String msg = "client msg ->";
-        for (int i = 0; i < 10; i++) {
-            msg += "client msg -> "+i;
-        }
+        Metadata metadata = new Metadata();
+        ProtocolBean bean = new ProtocolBean();
+        TextMessage msg = new TextMessage("message from liutaoyxz");
 
-        ByteBuffer byteBuffer = ByteBuffer.wrap(msg.getBytes(Charset.forName("utf-8")));
+        byte[] msgBytes = ProtostuffUtil.serializable(msg);
+        bean.setDataText(msgBytes);
+        bean.setDataClass(TextMessage.class.getName());
+        metadata.setBeanSize(msgBytes.length);
+        metadata.setCreateTime(System.currentTimeMillis());
+        byte[] mdBytes = ProtostuffUtil.serializable(metadata);
+        String ml = ProtostuffUtil.fillMetadataLength(mdBytes.length);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(10 + mdBytes.length);
+        byteBuffer.put(ml.getBytes("utf-8"));
+        byteBuffer.put(mdBytes,10,mdBytes.length);
+
+
+        socketChannel.write(byteBuffer);
+
         while (byteBuffer.hasRemaining()){
             socketChannel.write(byteBuffer);
         }
-        System.out.println("msg size -> "+msg.length() );
+
+
 
     }
 

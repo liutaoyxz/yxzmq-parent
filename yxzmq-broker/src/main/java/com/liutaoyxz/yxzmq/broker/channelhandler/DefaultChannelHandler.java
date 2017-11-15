@@ -1,12 +1,10 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
-import com.liutaoyxz.yxzmq.client.YxzClient;
-import org.apache.commons.lang3.StringUtils;
+import com.liutaoyxz.yxzmq.broker.YxzClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -36,7 +34,7 @@ public class DefaultChannelHandler extends AbstractChannelHandler {
     public boolean disconnect(SocketChannel channel) {
         check(channel);
         YxzClient client = client(channel);
-        String remoteAddress = client.getAddress();
+        String remoteAddress = client.address();
         log.info("client disconnected,client is {}", client);
         try {
             removeClient(channel);

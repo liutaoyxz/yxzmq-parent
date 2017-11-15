@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.broker;
 
+import com.liutaoyxz.yxzmq.broker.channelhandler.DefaultChannelHandler;
 import com.liutaoyxz.yxzmq.broker.server.DefaultServer;
 import com.liutaoyxz.yxzmq.broker.server.Server;
 import org.slf4j.Logger;
@@ -15,7 +16,8 @@ public class YxzmqMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(YxzmqMain.class);
 
     public static void main(String[] args) throws InterruptedException {
-        Server server = new DefaultServer();
+        DefaultChannelHandler handler = new DefaultChannelHandler();
+        Server server = new DefaultServer(handler);
         server.start();
         LOGGER.info("start .........");
 

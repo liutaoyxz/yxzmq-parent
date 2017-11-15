@@ -9,10 +9,8 @@ public class Metadata {
     private String cliendId;
     //创建连接时间
     private Long createTime;
-    //数据字节数组长度
-    private Integer dataLenght;
-    //命令字节数组长度
-    private Integer commandLenght;
+    //protocolBean 序列化的长度
+    private Integer beanSize;
 
     public String getCliendId() {
         return cliendId;
@@ -30,20 +28,12 @@ public class Metadata {
         this.createTime = createTime;
     }
 
-    public Integer getDataLenght() {
-        return dataLenght;
+    public Integer getBeanSize() {
+        return beanSize;
     }
 
-    public void setDataLenght(Integer dataLenght) {
-        this.dataLenght = dataLenght;
-    }
-
-    public Integer getCommandLenght() {
-        return commandLenght;
-    }
-
-    public void setCommandLenght(Integer commandLenght) {
-        this.commandLenght = commandLenght;
+    public void setBeanSize(Integer beanSize) {
+        this.beanSize = beanSize;
     }
 
     @Override
@@ -51,8 +41,7 @@ public class Metadata {
         return "Metadata{" +
                 "cliendId='" + cliendId + '\'' +
                 ", createTime=" + createTime +
-                ", dataLenght=" + dataLenght +
-                ", commandLenght=" + commandLenght +
+                ", beanSize=" + beanSize +
                 '}';
     }
 }

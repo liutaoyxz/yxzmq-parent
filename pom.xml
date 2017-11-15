@@ -9,6 +9,7 @@
     <module>yxzmq-broker</module>
     <module>yxzmq-client</module>
       <module>yxzmq-io</module>
+      <module>yxzmq-common</module>
   </modules>
   <packaging>pom</packaging>
 
