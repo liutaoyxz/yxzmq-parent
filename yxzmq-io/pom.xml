@@ -7,19 +7,30 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>yxzmq-client</artifactId>
+    <artifactId>yxzmq-io</artifactId>
     <packaging>jar</packaging>
 
-    <name>yxzmq-client</name>
+    <name>yxzmq-io</name>
     <url>http://maven.apache.org</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
     </properties>
 
     <dependencies>
 
+        <!-- protostuff -->
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-core</artifactId>
+            <!--<scope>test</scope>-->
+        </dependency>
+
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-runtime</artifactId>
+            <!--<scope>test</scope>-->
+        </dependency>
 
     </dependencies>
 </project>

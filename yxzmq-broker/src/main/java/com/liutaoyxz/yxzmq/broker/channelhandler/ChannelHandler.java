@@ -1,5 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
+import com.liutaoyxz.yxzmq.client.YxzClient;
+
 import java.nio.channels.SocketChannel;
 
 
@@ -25,6 +27,11 @@ public interface ChannelHandler {
      */
     boolean disconnect(SocketChannel channel);
 
-
+    /**
+     * 获得用户client对象
+     * @param channel
+     * @return 如果用户还没有添加到客户端列表 则返回null, 否则返回实例
+     */
+    public YxzClient client(SocketChannel channel);
 
 }

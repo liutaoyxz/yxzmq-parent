@@ -77,7 +77,8 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
         }
     }
 
-    protected YxzClient client(SocketChannel channel){
+    @Override
+    public YxzClient client(SocketChannel channel){
         check(channel);
         return scMap.get(channel);
     }
