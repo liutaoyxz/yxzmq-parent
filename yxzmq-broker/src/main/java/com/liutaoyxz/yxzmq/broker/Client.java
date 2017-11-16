@@ -1,8 +1,11 @@
 package com.liutaoyxz.yxzmq.broker;
 
 import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
+import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.List;
 
 /**
  * @author Doug Tao
@@ -20,8 +23,9 @@ public interface Client {
 
     /**
      * 开始读取数据
+     * @return true 可以开始读,  false,别人在读
      */
-    void startRead();
+    boolean startRead();
 
     /**
      * 获取client 的唯一id
@@ -42,5 +46,7 @@ public interface Client {
     SocketChannel channel();
 
     void stopRead();
+
+    List<ProtocolBean> read(ByteBuffer buffer);
 
 }

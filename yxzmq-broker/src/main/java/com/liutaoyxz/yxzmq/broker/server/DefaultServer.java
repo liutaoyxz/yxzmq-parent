@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.broker.server;
 
+import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
 import com.liutaoyxz.yxzmq.broker.YxzClient;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
@@ -104,7 +105,7 @@ public class DefaultServer extends AbstractServer {
             if (key.isReadable()) {
                 // 读取数据
                 socketChannel = (SocketChannel)key.channel();
-                YxzClient client = channelHandler.client(socketChannel);
+                Client client = channelHandler.client(socketChannel);
                 if (client != null){
                     reader.startRead(client);
 //                    socketChannel.register(selector,SelectionKey.OP_WRITE);

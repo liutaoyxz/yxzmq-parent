@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
+import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.YxzClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,7 @@ public class DefaultChannelHandler extends AbstractChannelHandler {
             //连接已经中断
             return true;
         }
-        YxzClient client = client(channel);
+        Client client = client(channel);
         if (client == null){
             //连接已经中断
             return true;

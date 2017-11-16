@@ -10,6 +10,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by liutao on 2017/11/14.
@@ -17,47 +18,61 @@ import java.util.Arrays;
 public class SendDataTest {
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
 
 //        Metadata metadata = new Metadata();
 
 
+//        System.out.println("/127.168.132.155:50434".hashCode());
         testSend();
     }
 
-    public static void testSend()  throws IOException{
+    public static void testSend() throws IOException, InterruptedException {
         Selector selector = Selector.open();
         SocketChannel socketChannel = SocketChannel.open();
 //        socketChannel.configureBlocking(false);
 //        socketChannel.register(selector, SelectionKey.OP_READ);
         socketChannel.connect(new InetSocketAddress(11171));
-        Metadata metadata = new Metadata();
-        ProtocolBean bean = new ProtocolBean();
-        TextMessage msg = new TextMessage("message from liutaoyxz");
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        for (int i = 0; i <10 ; i++) {
+            Metadata metadata = new Metadata();
+            ProtocolBean bean = new ProtocolBean();
+            TextMessage msg = new TextMessage("message from liutaoyxz ->"+i);
 
-        byte[] msgBytes = ProtostuffUtil.serializable(msg);
-        bean.setDataText(msgBytes);
-        bean.setDataClass(TextMessage.class.getName());
-        metadata.setBeanSize(msgBytes.length);
-        metadata.setCreateTime(System.currentTimeMillis());
-        byte[] mdBytes = ProtostuffUtil.serializable(metadata);
-        String ml = ProtostuffUtil.fillMetadataLength(mdBytes.length);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(10 + mdBytes.length);
-        byteBuffer.put(ml.getBytes("utf-8"));
-        socketChannel.write(byteBuffer);
-        byteBuffer.flip();
-        while (byteBuffer.hasRemaining()){
+            byte[] msgBytes = ProtostuffUtil.serializable(msg);
+            bean.setDataText(msgBytes);
+
+
+
+            bean.setDataClass(TextMessage.class.getName());
+
+            byte[] beanBytes = ProtostuffUtil.serializable(bean);
+            metadata.setBeanSize(beanBytes.length);
+
+            byte[] mdBytes = ProtostuffUtil.serializable(metadata);
+            String ml = ProtostuffUtil.fillMetadataLength(mdBytes.length);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(ml.getBytes(Charset.forName("utf-8")));
             socketChannel.write(byteBuffer);
-        }
-        byteBuffer.clear();
-        byteBuffer.put(mdBytes);
+            while (byteBuffer.hasRemaining()){
+                socketChannel.write(byteBuffer);
+            }
 
-
-        socketChannel.write(byteBuffer);
-
-        while (byteBuffer.hasRemaining()){
+            byteBuffer = ByteBuffer.wrap(mdBytes);
             socketChannel.write(byteBuffer);
+
+            while (byteBuffer.hasRemaining()){
+                socketChannel.write(byteBuffer);
+            }
+
+            byteBuffer = ByteBuffer.wrap(beanBytes);
+            socketChannel.write(byteBuffer);
+
+            while (byteBuffer.hasRemaining()){
+                socketChannel.write(byteBuffer);
+            }
+
         }
+        countDownLatch.await();
 
 
 

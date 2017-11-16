@@ -2,17 +2,26 @@ package com.liutaoyxz.yxzmq.broker.datahandler;
 
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
 import com.liutaoyxz.yxzmq.broker.Client;
+import com.liutaoyxz.yxzmq.io.protocol.Message;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
+import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.util.ProtostuffUtil;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.liutaoyxz.yxzmq.io.protocol.ReadContainer.METADATA_SIZE_LENGTH;
+
+import static com.liutaoyxz.yxzmq.io.protocol.ReadContainer.DEFAULT_CHARSET;
 
 /**
  * @author Doug Tao
@@ -23,13 +32,11 @@ public abstract class AbstractChannelReader implements ChannelReader {
 
     private Logger log;
 
-    private static final int headerSize = 10;
-
-    private static final String DEFAULT_CHARSET = "utf-8";
-
     private ChannelHandler handler;
 
     private Lock addClientLock = new ReentrantLock();
+
+    private AtomicInteger incrId = new AtomicInteger(1);
 
     protected AbstractChannelReader(Logger log,ChannelHandler handler) {
         this.handler = handler;
@@ -41,17 +48,17 @@ public abstract class AbstractChannelReader implements ChannelReader {
 
     @Override
     public void startRead(final Client client) {
-        if (client.reading()){
+        if (!client.startRead()){
             return ;
         }
-
-//        executorService.execute(new Runnable() {
-//            @Override
-//            public void run() {
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
                 try {
-                    client.startRead();
+                    Thread.currentThread().setName(client.id()+"-"+incrId.getAndIncrement());
                     SocketChannel socketChannel = client.channel();
-                    ByteBuffer buffer = ByteBuffer.allocate(headerSize);
+                    ByteBuffer buffer = ByteBuffer.allocate(128);
+
                     // TODO: 2017/11/15 read 时抛出IOException 初步判断为连接已经中断
                     //读取协议头
                     int readCount = socketChannel.read(buffer);
@@ -63,32 +70,27 @@ public abstract class AbstractChannelReader implements ChannelReader {
                     if (readCount == 0){
                         return;
                     }
-                    if (readCount != headerSize){
-                        //协议头 长度不对
-                        log.debug("headerSize is not {},clientId is {},read str is {}",headerSize,client.id(),new String(buffer.array(),DEFAULT_CHARSET));
-
-                        return ;
+                    buffer.flip();
+                    List<ProtocolBean> beans = client.read(buffer);
+                    log.debug("beans :{}",beans);
+                    for (ProtocolBean b : beans){
+                        Message o = null;
+                        try {
+                            o = (Message) ProtostuffUtil.get(b.getDataText(), Class.forName(b.getDataClass()));
+                            System.out.println(o);
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println(o.getContent());
                     }
-                    log.debug("receive msg,msg is {}",new String(buffer.array(),DEFAULT_CHARSET));
-//                    int metaDateSize = Integer.valueOf(new String(buffer.array(),DEFAULT_CHARSET));
-//                    log.debug("read metaDateSize,size is {}",metaDateSize);
-//                    buffer = ByteBuffer.allocate(metaDateSize);
-//                    while (buffer.position() < metaDateSize){
-//                        socketChannel.read(buffer);
-//                    }
-//                    buffer.flip();
-//                    Metadata metadata = ProtostuffUtil.get(buffer.array(), Metadata.class);
-//                    log.debug("read from client,clientId is {},metadata is {}",client.id(),metadata);
-//
-//                    buffer.clear();
                     return ;
                 } catch (IOException e) {
-                    log.error("read from client error",e);
+//                    log.error("read from client error",e);
                     handler.disconnect(client.channel());
                 }finally {
                     client.stopRead();
                 }
-//            }
-//        });
+            }
+        });
     }
 }

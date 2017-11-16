@@ -51,7 +51,7 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
                 YxzClient rmClient = scMap.remove(channel);
                 return null;
             }
-            Integer clientId = address.hashCode();
+            Integer clientId = Math.abs(address.hashCode());
             YxzClient client = new YxzClient(clientId.toString(),channel,address);
             scMap.put(channel,client);
             return client;

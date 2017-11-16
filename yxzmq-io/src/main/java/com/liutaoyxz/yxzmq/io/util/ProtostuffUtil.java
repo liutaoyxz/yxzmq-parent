@@ -43,7 +43,7 @@ public class ProtostuffUtil {
             e.printStackTrace();
             LOGGER.error("deSerializable error ", e);
         }
-        LOGGER.debug("get obj,obj is {}", obj);
+//        LOGGER.debug("get obj,obj is {}", obj);
         return obj;
     }
 
@@ -72,7 +72,7 @@ public class ProtostuffUtil {
             e.printStackTrace();
             LOGGER.error("error className : {} ", className);
         }
-        LOGGER.debug("get obj,obj is {}", obj);
+//        LOGGER.debug("get obj,obj is {}", obj);
         return obj;
     }
 

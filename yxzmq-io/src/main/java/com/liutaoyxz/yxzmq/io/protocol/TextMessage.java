@@ -7,6 +7,9 @@ package com.liutaoyxz.yxzmq.io.protocol;
  */
 public class TextMessage implements Message<String> {
 
+    public TextMessage() {
+    }
+
     public TextMessage(String content){
         this.content = content;
     }

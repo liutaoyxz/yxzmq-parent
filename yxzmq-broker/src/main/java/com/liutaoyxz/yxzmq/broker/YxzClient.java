@@ -1,9 +1,13 @@
 package com.liutaoyxz.yxzmq.broker;
 
+import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
+import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,7 +18,9 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class YxzClient implements Client{
 
-    private static final Logger LOG = LoggerFactory.getLogger(YxzClient.class);
+    private static final Logger log = LoggerFactory.getLogger(YxzClient.class);
+
+    private ReadContainer reader = new ReadContainer();
 
     private String clientId;
 
@@ -38,7 +44,7 @@ public class YxzClient implements Client{
     }
 
     @Override
-    public void startRead() {
+    public boolean startRead() {
         if (!isReading){
             lock.lock();
             try {
@@ -47,24 +53,34 @@ public class YxzClient implements Client{
                         throw new NullPointerException("startRead,but channel is null");
                     }
                     if (!channel.isOpen()){
-                        LOG.info("startRead,but channel is not open,address is {}",address);
+                        log.info("startRead,but channel is not open,address is {}",address);
                     }
                     if (!channel.isConnected()){
-                        LOG.info("startRead,but channel is not connected,address is {}",address);
+                        log.info("startRead,but channel is not connected,address is {}",address);
                     }
                     this.isReading = true;
-                    LOG.info("client start read,address is {}",address);
+                    log.debug("client start read,address is {}",address);
+                    return true;
                 }
+                return false;
             }finally {
                 lock.unlock();
             }
         }
-
+        return false;
 
     }
 
     @Override
+    public List<ProtocolBean> read(ByteBuffer buffer) {
+        log.debug("start read thread is {}",Thread.currentThread().getName());
+        this.reader.read(buffer);
+        return this.reader.flush();
+    }
+
+    @Override
     public void stopRead() {
+        log.debug("stop read,thread is {}",Thread.currentThread().getName());
         lock.lock();
         try {
             this.isReading = false;
@@ -86,5 +102,14 @@ public class YxzClient implements Client{
     @Override
     public SocketChannel channel() {
         return channel;
+    }
+
+    @Override
+    public String toString() {
+        return "YxzClient{" +
+                "clientId='" + clientId + '\'' +
+                ", channel=" + channel +
+                ", address='" + address + '\'' +
+                '}';
     }
 }
