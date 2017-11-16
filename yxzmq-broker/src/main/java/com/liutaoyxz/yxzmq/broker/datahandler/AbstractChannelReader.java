@@ -1,27 +1,13 @@
 package com.liutaoyxz.yxzmq.broker.datahandler;
 
-import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
 import com.liutaoyxz.yxzmq.broker.Client;
-import com.liutaoyxz.yxzmq.io.protocol.Message;
-import com.liutaoyxz.yxzmq.io.protocol.Metadata;
-import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
-import com.liutaoyxz.yxzmq.io.util.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
+import com.liutaoyxz.yxzmq.broker.datahandler.analyser.DefaultDataAnalyner;
 import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
-import java.util.Arrays;
-import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import static com.liutaoyxz.yxzmq.io.protocol.ReadContainer.METADATA_SIZE_LENGTH;
-
-import static com.liutaoyxz.yxzmq.io.protocol.ReadContainer.DEFAULT_CHARSET;
 
 /**
  * @author Doug Tao
@@ -34,9 +20,7 @@ public abstract class AbstractChannelReader implements ChannelReader {
 
     private ChannelHandler handler;
 
-    private Lock addClientLock = new ReentrantLock();
-
-    private AtomicInteger incrId = new AtomicInteger(1);
+    private final ConcurrentHashMap<String,Runnable> idToTask = new ConcurrentHashMap<>();
 
     protected AbstractChannelReader(Logger log,ChannelHandler handler) {
         this.handler = handler;
@@ -51,45 +35,18 @@ public abstract class AbstractChannelReader implements ChannelReader {
         if (!client.startRead()){
             return ;
         }
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.currentThread().setName(client.id()+"-"+incrId.getAndIncrement());
-                    SocketChannel socketChannel = client.channel();
-                    ByteBuffer buffer = ByteBuffer.allocate(128);
-
-                    // TODO: 2017/11/15 read 时抛出IOException 初步判断为连接已经中断
-                    //读取协议头
-                    int readCount = socketChannel.read(buffer);
-                    if (readCount == -1){
-                        //连接中断
-                        handler.disconnect(socketChannel);
-                        return;
-                    }
-                    if (readCount == 0){
-                        return;
-                    }
-                    buffer.flip();
-                    List<ProtocolBean> beans = client.read(buffer);
-                    log.debug("beans :{}",beans);
-                    for (ProtocolBean b : beans){
-                        Message o = null;
-                        try {
-                            o = (Message) ProtostuffUtil.get(b.getDataText(), Class.forName(b.getDataClass()));
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                        System.out.println(o.getContent());
-                    }
-                    return ;
-                } catch (IOException e) {
-//                    log.error("read from client error",e);
-                    handler.disconnect(client.channel());
-                }finally {
-                    client.stopRead();
-                }
-            }
-        });
+        executorService.execute(getTask(client));
     }
+
+
+    private Runnable getTask(Client client){
+        String id = client.id();
+        Runnable task = idToTask.get(id);
+        if(idToTask.get(id) == null){
+            task = new DefaultDataAnalyner(client,handler);
+            idToTask.putIfAbsent(id,task);
+        }
+        return task;
+    }
+
 }

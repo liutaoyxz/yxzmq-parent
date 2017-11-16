@@ -1,6 +1,5 @@
-package com.liutaoyxz.yxzmq.io.util;
+package com.liutaoyxz.yxzmq.common;
 
-import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
 import io.protostuff.ProtostuffIOUtil;

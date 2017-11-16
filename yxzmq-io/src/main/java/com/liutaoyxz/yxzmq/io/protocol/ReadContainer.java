@@ -1,13 +1,12 @@
 package com.liutaoyxz.yxzmq.io.protocol;
 
-import com.liutaoyxz.yxzmq.io.util.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.common.ProtostuffUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 

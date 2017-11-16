@@ -1,7 +1,9 @@
 package com.liutaoyxz.yxzmq;
 
-import com.liutaoyxz.yxzmq.io.protocol.*;
-import com.liutaoyxz.yxzmq.io.util.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.common.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.io.protocol.Metadata;
+import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
+import com.liutaoyxz.yxzmq.io.protocol.TextMessage;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
