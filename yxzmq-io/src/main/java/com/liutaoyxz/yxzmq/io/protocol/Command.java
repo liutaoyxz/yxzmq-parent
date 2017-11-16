@@ -7,7 +7,9 @@ package com.liutaoyxz.yxzmq.io.protocol;
  *      生产消息
  *      消费确认
  *      收到确认
- *
+ *  消息:
+ *      消息描述部分,描述消息的类型,p2p还是topic,具体的标识
+ *      消息体部分,具体的消息内容
  */
 public interface Command {
 
