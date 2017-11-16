@@ -37,7 +37,7 @@ public class SendDataTest {
         for (int i = 0; i <10 ; i++) {
             Metadata metadata = new Metadata();
             ProtocolBean bean = new ProtocolBean();
-            TextMessage msg = new TextMessage("message from liutaoyxz ->"+i);
+            TextMessage msg = new TextMessage("汉字消息 from liutaoyxz ->"+i);
 
             byte[] msgBytes = ProtostuffUtil.serializable(msg);
             bean.setDataText(msgBytes);

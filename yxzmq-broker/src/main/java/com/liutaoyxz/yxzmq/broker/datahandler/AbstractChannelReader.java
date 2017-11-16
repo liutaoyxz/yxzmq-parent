@@ -77,7 +77,6 @@ public abstract class AbstractChannelReader implements ChannelReader {
                         Message o = null;
                         try {
                             o = (Message) ProtostuffUtil.get(b.getDataText(), Class.forName(b.getDataClass()));
-                            System.out.println(o);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                         }
