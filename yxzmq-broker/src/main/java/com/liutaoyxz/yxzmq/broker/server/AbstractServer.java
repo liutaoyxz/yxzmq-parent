@@ -18,13 +18,13 @@ public abstract class AbstractServer implements Server {
 
     protected ServerConfig config;
 
-    protected ChannelHandler channelHandler;
+    protected ChannelHandler handler;
 
     protected ChannelReader reader;
 
-    protected AbstractServer(Logger log,ChannelHandler channelHandler,ChannelReader reader) {
+    protected AbstractServer(Logger log,ChannelHandler handler,ChannelReader reader) {
         this.log = log;
-        this.channelHandler = channelHandler;
+        this.handler = handler;
         this.reader = reader;
     }
 

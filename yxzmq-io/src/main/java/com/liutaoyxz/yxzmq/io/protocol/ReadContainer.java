@@ -1,6 +1,6 @@
 package com.liutaoyxz.yxzmq.io.protocol;
 
-import com.liutaoyxz.yxzmq.common.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,38 +1,31 @@
 package com.liutaoyxz.yxzmq;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.io.protocol.Metadata;
+
+import java.util.Arrays;
 
 /**
  * Unit test for simple App.
  */
-public class AppTest 
-    extends TestCase
-{
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public AppTest( String testName )
-    {
-        super( testName );
+public class AppTest {
+
+    public static void main(String[] args) {
+        ProtocolBeanTest test = new ProtocolBeanTest();
+        test.setCommand(1);
+        test.setTitle("title");
+        Metadata metadata = new Metadata();
+        metadata.setClientId("xxx1");
+
+        byte[] bytes = ProtostuffUtil.serializable(test);
+
+        System.out.println(Arrays.toString(bytes));
+
+
+        ProtocolBeanTest obj = ProtostuffUtil.get(bytes, ProtocolBeanTest.class);
+        System.out.println(obj);
+
+
     }
 
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite()
-    {
-        return new TestSuite( AppTest.class );
-    }
-
-    /**
-     * Rigourous Test :-)
-     */
-    public void testApp()
-    {
-        assertTrue( true );
-    }
 }

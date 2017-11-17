@@ -3,9 +3,24 @@ package com.liutaoyxz.yxzmq.io.protocol;
 import java.util.Arrays;
 
 /**
- * Created by liutao on 2017/11/14.
+ * @author Doug Tao
  */
 public class ProtocolBean {
+
+    /**
+     * 命令
+     */
+    private int command;
+
+    /**
+     * 消息描述类 class name
+     */
+    private String descClass;
+
+    /**
+     * 消息描述对象  bytes
+     */
+    private byte[] descBytes;
 
     /**
      * 数据class name
@@ -15,8 +30,31 @@ public class ProtocolBean {
     /**
      * 数据序列化内容
      */
-    private byte[] dataText;
+    private byte[] dataBytes;
 
+    public int getCommand() {
+        return command;
+    }
+
+    public void setCommand(int command) {
+        this.command = command;
+    }
+
+    public String getDescClass() {
+        return descClass;
+    }
+
+    public void setDescClass(String descClass) {
+        this.descClass = descClass;
+    }
+
+    public byte[] getDescBytes() {
+        return descBytes;
+    }
+
+    public void setDescBytes(byte[] descBytes) {
+        this.descBytes = descBytes;
+    }
 
     public String getDataClass() {
         return dataClass;
@@ -26,19 +64,22 @@ public class ProtocolBean {
         this.dataClass = dataClass;
     }
 
-    public byte[] getDataText() {
-        return dataText;
+    public byte[] getDataBytes() {
+        return dataBytes;
     }
 
-    public void setDataText(byte[] dataText) {
-        this.dataText = dataText;
+    public void setDataBytes(byte[] dataBytes) {
+        this.dataBytes = dataBytes;
     }
 
     @Override
     public String toString() {
         return "ProtocolBean{" +
-                "dataClass='" + dataClass + '\'' +
-                ", dataText=" + Arrays.toString(dataText) +
+                "command=" + command +
+                ", descClass='" + descClass + '\'' +
+                ", descBytes=" + Arrays.toString(descBytes) +
+                ", dataClass='" + dataClass + '\'' +
+                ", dataBytes=" + Arrays.toString(dataBytes) +
                 '}';
     }
 }

@@ -2,7 +2,6 @@ package com.liutaoyxz.yxzmq.broker.server;
 
 import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
-import com.liutaoyxz.yxzmq.broker.YxzClient;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
 import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
 import com.liutaoyxz.yxzmq.broker.datahandler.DefaultChannelReader;
@@ -64,7 +63,6 @@ public class DefaultServer extends AbstractServer {
                     while (keys.hasNext()) {
                         try {
                             SelectionKey key = keys.next();
-//                            key.cancel();
                             handleKey(key);
                         } finally {
                             keys.remove();
@@ -100,16 +98,14 @@ public class DefaultServer extends AbstractServer {
                 socketChannel = ((ServerSocketChannel) key.channel()).accept();
                 socketChannel.configureBlocking(false);
                 socketChannel.register(selector, SelectionKey.OP_READ, ByteBuffer.allocate(128));
-                channelHandler.connect(socketChannel);
+                handler.connect(socketChannel);
             }
             if (key.isReadable()) {
                 // 读取数据
                 socketChannel = (SocketChannel)key.channel();
-                Client client = channelHandler.client(socketChannel);
+                Client client = handler.client(socketChannel);
                 if (client != null){
                     reader.startRead(client);
-//                    socketChannel.register(selector,SelectionKey.OP_WRITE);
-//                    key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                     key.interestOps(SelectionKey.OP_READ);
                 }
 
@@ -118,14 +114,14 @@ public class DefaultServer extends AbstractServer {
                 // 等待写入状态
                 log.debug("key is writable");
                 socketChannel = (SocketChannel)key.channel();
-//                socketChannel.register(selector,SelectionKey.OP_READ);
-//                key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                 key.interestOps(SelectionKey.OP_READ);
             }
         } catch (CancelledKeyException e) {
-            channelHandler.disconnect(socketChannel);
+            log.debug("channel disconnect by CancelledKeyException");
+            handler.disconnect(socketChannel);
         } catch (IOException e){
-            channelHandler.disconnect(socketChannel);
+            log.debug("channel disconnect by IOException");
+            handler.disconnect(socketChannel);
         }
     }
 

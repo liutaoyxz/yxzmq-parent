@@ -5,8 +5,8 @@ package com.liutaoyxz.yxzmq.io.protocol;
  */
 public class TestCommand implements Command {
 
+    @Override
     public boolean opeartor(String cliendId) {
-        System.out.println("testCommand opeartor");
-        return true;
+        return false;
     }
 }

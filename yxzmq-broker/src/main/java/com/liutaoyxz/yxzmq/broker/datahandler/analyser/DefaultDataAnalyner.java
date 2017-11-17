@@ -2,8 +2,10 @@ package com.liutaoyxz.yxzmq.broker.datahandler.analyser;
 
 import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
-import com.liutaoyxz.yxzmq.common.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.common.exception.ConnectCancelException;
+import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import com.liutaoyxz.yxzmq.io.protocol.Message;
+import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +29,7 @@ public class DefaultDataAnalyner implements Runnable {
 
     private AtomicInteger readCount = new AtomicInteger(0);
 
-    public DefaultDataAnalyner(Client client,ChannelHandler handler){
+    public DefaultDataAnalyner(Client client, ChannelHandler handler) {
         this.client = client;
         this.handler = handler;
     }
@@ -43,31 +45,37 @@ public class DefaultDataAnalyner implements Runnable {
             // TODO: 2017/11/15 read 时抛出IOException 初步判断为连接已经中断
             //读取协议头
             int readCount = socketChannel.read(buffer);
-            if (readCount == -1){
+            if (readCount == -1) {
                 //连接中断
+                log.debug("readCount -1,disconnect");
                 handler.disconnect(socketChannel);
                 return;
             }
-            if (readCount == 0){
+            if (readCount == 0) {
                 return;
             }
             buffer.flip();
             List<ProtocolBean> beans = client.read(buffer);
-            log.debug("beans :{}",beans);
-            for (ProtocolBean b : beans){
-                Message o = null;
+            log.debug("beans :{}", beans);
+            for (ProtocolBean b : beans) {
+                Message msg = null;
+                MessageDesc desc = null;
                 try {
-                    o = (Message) ProtostuffUtil.get(b.getDataText(), Class.forName(b.getDataClass()));
+                    msg = (Message) ProtostuffUtil.get(b.getDataBytes(), Class.forName(b.getDataClass()));
+                    desc = (MessageDesc) ProtostuffUtil.get(b.getDescBytes(),b.getDescClass());
                 } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                    log.debug("deSerializable error",e);
                 }
-                System.out.println(o.getContent());
+                System.out.println(msg.getContent());
+                System.out.println(desc);
             }
-            return ;
+            return;
         } catch (IOException e) {
-//                    log.error("read from client error",e);
+            log.debug("channel read error");
+            log.debug("channel disconnect by IOException");
             handler.disconnect(client.channel());
-        }finally {
+//            throw new ConnectCancelException("channel disconnect when read");
+        } finally {
             client.stopRead();
         }
     }

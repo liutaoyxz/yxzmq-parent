@@ -1,9 +1,11 @@
 package com.liutaoyxz.yxzmq;
 
-import com.liutaoyxz.yxzmq.common.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.TextMessage;
+import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -42,11 +44,18 @@ public class SendDataTest {
             TextMessage msg = new TextMessage("汉字消息 from liutaoyxz ->"+i);
 
             byte[] msgBytes = ProtostuffUtil.serializable(msg);
-            bean.setDataText(msgBytes);
+            bean.setDataBytes(msgBytes);
 
 
 
             bean.setDataClass(TextMessage.class.getName());
+            bean.setCommand(CommonConstant.Command.SEND);
+            MessageDesc desc = new MessageDesc();
+            desc.setIndex(i+1);
+            desc.setTitle("title");
+            byte[] descBytes = ProtostuffUtil.serializable(desc);
+            bean.setDescBytes(descBytes);
+            bean.setDescClass(MessageDesc.class.getName());
 
             byte[] beanBytes = ProtostuffUtil.serializable(bean);
             metadata.setBeanSize(beanBytes.length);
@@ -82,7 +91,7 @@ public class SendDataTest {
 
     public static void metadatalengh(){
         Metadata metadata = new Metadata();
-        metadata.setCliendId("xxxxxid1");
+        metadata.setClientId("xxxxxid1");
         metadata.setCreateTime(System.currentTimeMillis());
 //        metadata.setIp("127.127.122.1");
         byte[] bytes = ProtostuffUtil.serializable(metadata);

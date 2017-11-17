@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.common;
+package com.liutaoyxz.yxzmq.common.util;
 
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
@@ -42,7 +42,6 @@ public class ProtostuffUtil {
             e.printStackTrace();
             LOGGER.error("deSerializable error ", e);
         }
-//        LOGGER.debug("get obj,obj is {}", obj);
         return obj;
     }
 
@@ -71,7 +70,6 @@ public class ProtostuffUtil {
             e.printStackTrace();
             LOGGER.error("error className : {} ", className);
         }
-//        LOGGER.debug("get obj,obj is {}", obj);
         return obj;
     }
 
