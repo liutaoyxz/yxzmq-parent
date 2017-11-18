@@ -17,6 +17,10 @@ public interface CommonConstant {
          * 发送消息
          */
         int SEND = 1;
+        /**
+         * 订阅
+         */
+        int SUBSCRIBE = 2;
 
     }
 

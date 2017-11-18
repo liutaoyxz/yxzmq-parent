@@ -38,13 +38,19 @@ public abstract class AbstractChannelReader implements ChannelReader {
         executorService.execute(getTask(client));
     }
 
-
+    /**
+     * 获取客户端的task 对象
+     * @param client
+     * @return
+     * TODO 现在每个客户端的数据处理采用的是单线程,所以目前不存在并发操作
+     */
     private Runnable getTask(Client client){
         String id = client.id();
         Runnable task = idToTask.get(id);
         if(idToTask.get(id) == null){
             task = new DefaultDataAnalyner(client,handler);
             idToTask.putIfAbsent(id,task);
+            task = idToTask.get(id);
         }
         return task;
     }

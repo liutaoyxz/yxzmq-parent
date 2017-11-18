@@ -34,6 +34,7 @@ public class MessageContainer {
      * @param title 主题
      * @param message 主题消息包装类
      * @return 保存是否成功
+     * TODO 主题消息不应该保存,占用存储空间. 最后改造成为保存到日志中,在持久化中完成这个功能
      */
     public static boolean save(String title,TopicMessage message){
         checkTitle(title);

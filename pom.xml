@@ -10,6 +10,7 @@
     <module>yxzmq-client</module>
       <module>yxzmq-io</module>
       <module>yxzmq-common</module>
+      <module>yxzmq-cluster</module>
   </modules>
   <packaging>pom</packaging>
 
@@ -87,6 +88,25 @@
         <version>${commonslang3.version}</version>
       </dependency>
 
+      <!-- https://mvnrepository.com/artifact/javax.jms/jms -->
+      <dependency>
+        <groupId>javax.jms</groupId>
+        <artifactId>jms</artifactId>
+        <version>1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.jms</groupId>
+        <artifactId>javax.jms-api</artifactId>
+        <version>2.0.1</version>
+        <!--<version>1.1-rev-1</version>-->
+      </dependency>
+
+      <dependency>
+        <groupId>javax.jms</groupId>
+        <artifactId>jms-api</artifactId>
+        <!--<version>2.0.1</version>-->
+        <version>1.1-rev-1</version>
+      </dependency>
 
 
 

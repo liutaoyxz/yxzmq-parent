@@ -19,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Created by liutao on 2017/11/14.
  */
+
 public class SendDataTest {
 
 
@@ -100,5 +101,7 @@ public class SendDataTest {
         System.out.println(Arrays.toString(bytes));
         System.out.println(bytes.length);
     }
+
+
 
 }

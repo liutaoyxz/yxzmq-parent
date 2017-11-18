@@ -7,10 +7,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>yxzmq-common</artifactId>
+    <artifactId>yxzmq-cluster</artifactId>
     <packaging>jar</packaging>
 
-    <name>yxzmq-common</name>
+    <name>yxzmq-cluster</name>
     <url>http://maven.apache.org</url>
 
     <properties>
@@ -19,22 +19,5 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>javax.jms</groupId>
-            <artifactId>javax.jms-api</artifactId>
-        </dependency>
-
-        <!-- protostuff -->
-        <dependency>
-            <groupId>io.protostuff</groupId>
-            <artifactId>protostuff-core</artifactId>
-            <!--<scope>test</scope>-->
-        </dependency>
-
-        <dependency>
-            <groupId>io.protostuff</groupId>
-            <artifactId>protostuff-runtime</artifactId>
-            <!--<scope>test</scope>-->
-        </dependency>
     </dependencies>
 </project>

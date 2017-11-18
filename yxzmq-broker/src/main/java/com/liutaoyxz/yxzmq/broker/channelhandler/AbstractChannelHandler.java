@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
+import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.YxzClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -23,6 +24,42 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
 
     protected AbstractChannelHandler(Logger log) {
         this.log = log;
+    }
+
+
+    @Override
+    public boolean connect(SocketChannel channel) {
+        check(channel);
+        YxzClient client = addClient(channel);
+        log.info("client connected,client is {}",client);
+        if (client != null){
+            afterConnected(client);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean disconnect(SocketChannel channel) {
+        if (channel == null){
+            //连接已经中断
+            return true;
+        }
+        Client client = client(channel);
+        if (client == null){
+            //连接已经中断
+            return true;
+        }
+        log.info("client disconnected,client is {}", client);
+        try {
+            removeClient(channel);
+            channel.close();
+            afterDiscontected(client);
+        } catch (IOException e) {
+            log.debug("disconnect socketChannel error,SocketChannel is {}", channel);
+            log.error("disconnect socketChannel error", e);
+        }
+        return true;
     }
 
 
@@ -67,6 +104,18 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
         check(channel);
         return scMap.get(channel);
     }
+
+    /**
+     * 连接成功后的一些操作
+     * @param client
+     */
+    protected abstract void afterConnected(Client client);
+
+    /**
+     * 取消连接后的一些操作
+     * @param client
+     */
+    protected abstract void afterDiscontected(Client client);
 
     protected YxzClient removeClient(SocketChannel channel){
         check(channel);

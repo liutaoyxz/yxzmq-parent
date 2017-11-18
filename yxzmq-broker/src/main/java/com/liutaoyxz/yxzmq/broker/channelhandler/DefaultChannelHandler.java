@@ -1,12 +1,8 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
 import com.liutaoyxz.yxzmq.broker.Client;
-import com.liutaoyxz.yxzmq.broker.YxzClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.nio.channels.SocketChannel;
 
 /**
  * @author Doug Tao
@@ -24,35 +20,12 @@ public class DefaultChannelHandler extends AbstractChannelHandler {
     }
 
     @Override
-    public boolean connect(SocketChannel channel) {
-        check(channel);
-        YxzClient client = addClient(channel);
-        log.info("client connected,client is {}",client);
-        return true;
+    protected void afterConnected(Client client) {
+
     }
 
     @Override
-    public boolean disconnect(SocketChannel channel) {
-        if (channel == null){
-            //连接已经中断
-            return true;
-        }
-        Client client = client(channel);
-        if (client == null){
-            //连接已经中断
-            return true;
-        }
-        String remoteAddress = client.address();
-        log.info("client disconnected,client is {}", client);
-        try {
-            removeClient(channel);
-            channel.close();
-        } catch (IOException e) {
-            log.debug("disconnect socketChannel error,SocketChannel is {}", channel);
-            log.error("disconnect socketChannel error", e);
-        }
-        return true;
+    protected void afterDiscontected(Client client) {
+
     }
-
-
 }
