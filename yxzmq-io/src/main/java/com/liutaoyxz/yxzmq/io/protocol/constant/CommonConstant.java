@@ -11,49 +11,52 @@ public interface CommonConstant {
     /**
      * 命令类型
      */
-    static interface Command {
+    interface Command {
 
         /**
          * 发送消息
          */
-        static final int SEND = 1;
+        int SEND = 1;
 
     }
 
     /**
      * 消息类型
      */
-    static interface MessageType {
+    interface MessageType {
 
         /**
          * 主题模式
          */
-        static final int TOPIC = 1;
+        int TOPIC = 1;
         /**
          * 队列模式
          */
-        static final int QUEUE = 2;
+        int QUEUE = 2;
 
     }
 
     /**
      * 消息处理标识
      */
-    static interface SendStatus {
+    interface ResponseStatus {
 
         /**
          * 接收到
          */
-        static final int RECEIVE = 1;
+        int RECEIVE = 1;
 
         /**
          * 处理完成
          */
-        static final int COMPLETE = 2;
-
-
+        int COMPLETE = 2;
 
     }
+
+//    interface
+
+
+
 
 
 }
