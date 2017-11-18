@@ -2,10 +2,7 @@ package com.liutaoyxz.yxzmq.broker.datahandler.analyser;
 
 import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
-import com.liutaoyxz.yxzmq.common.exception.ConnectCancelException;
-import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
-import com.liutaoyxz.yxzmq.io.protocol.Message;
-import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
+import com.liutaoyxz.yxzmq.broker.messagehandler.YxzMessageHandler;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,16 +55,7 @@ public class DefaultDataAnalyner implements Runnable {
             List<ProtocolBean> beans = client.read(buffer);
             log.debug("beans :{}", beans);
             for (ProtocolBean b : beans) {
-                Message msg = null;
-                MessageDesc desc = null;
-                try {
-                    msg = (Message) ProtostuffUtil.get(b.getDataBytes(), Class.forName(b.getDataClass()));
-                    desc = (MessageDesc) ProtostuffUtil.get(b.getDescBytes(),b.getDescClass());
-                } catch (ClassNotFoundException e) {
-                    log.debug("deSerializable error",e);
-                }
-                System.out.println(msg.getContent());
-                System.out.println(desc);
+                YxzMessageHandler.handlerProtocolBean(b);
             }
             return;
         } catch (IOException e) {

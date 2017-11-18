@@ -49,6 +49,7 @@ public class MessageContainer {
             log.debug("save message error",e);
             return false;
         }
+        log.debug("receive message {}",message);
         return true;
     }
 
@@ -72,6 +73,7 @@ public class MessageContainer {
             log.debug("save message error",e);
             return false;
         }
+        log.debug("receive message {}",message);
         return true;
     }
 

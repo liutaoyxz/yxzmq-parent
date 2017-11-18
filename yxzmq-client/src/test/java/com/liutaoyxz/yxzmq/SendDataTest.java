@@ -51,6 +51,7 @@ public class SendDataTest {
             bean.setDataClass(TextMessage.class.getName());
             bean.setCommand(CommonConstant.Command.SEND);
             MessageDesc desc = new MessageDesc();
+            desc.setType((i % 2 == 0)?CommonConstant.MessageType.QUEUE:CommonConstant.MessageType.TOPIC);
             desc.setIndex(i+1);
             desc.setTitle("title");
             byte[] descBytes = ProtostuffUtil.serializable(desc);
