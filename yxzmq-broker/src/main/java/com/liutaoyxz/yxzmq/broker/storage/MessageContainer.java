@@ -50,7 +50,8 @@ public class MessageContainer {
             log.debug("save message error",e);
             return false;
         }
-        log.info("receive message {}",message);
+        log.debug("receive message {}",message);
+        System.out.println(message.getText());
         return true;
     }
 
