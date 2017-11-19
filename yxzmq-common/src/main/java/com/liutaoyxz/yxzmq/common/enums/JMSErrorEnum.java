@@ -13,7 +13,9 @@ public enum JMSErrorEnum {
 
     CONNECT_ERROR("0001","connect error"),
     CONNECTION_NOT_INIT("0002","connection not init"),
-    CHANNEL_OPEN_ERROR("0003","error when channel open")
+    CHANNEL_OPEN_ERROR("0003","error when channel open"),
+    SESSION_CLOSED("0004","session already closed"),
+    CONNECTION_NOT_START("0005","connection not start")
     ;
 
 
@@ -52,7 +54,7 @@ public enum JMSErrorEnum {
     }
 
     public JMSException exception(){
-        return new JMSException(code(),reason());
+        return new JMSException(reason(),code());
     }
 
 }

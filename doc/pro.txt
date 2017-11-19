@@ -6,3 +6,5 @@
 6   真他妈烧脑,前面不设计好,到后面增加功能时肯定费劲
 7   消息的存储已经完成,开发客户端 provider 和 consumer
 8   实现jms规范中,有点烧脑,烟是一根接着一根的抽.....
+9   session的run执行什么呢,遍历这个session下的所有consumer,当接受到消息的时候调用consumer的监听器
+10  connection下的执行器遍历connection下的session,负责通知session执行任务

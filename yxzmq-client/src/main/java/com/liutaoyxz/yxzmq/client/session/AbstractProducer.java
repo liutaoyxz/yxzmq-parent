@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.client.producer;
+package com.liutaoyxz.yxzmq.client.session;
 
 import javax.jms.*;
 
@@ -78,11 +78,6 @@ public abstract class AbstractProducer implements MessageProducer {
 
     @Override
     public void close() throws JMSException {
-
-    }
-
-    @Override
-    public void send(Message message) throws JMSException {
 
     }
 

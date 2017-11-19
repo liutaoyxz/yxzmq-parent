@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.io.Message;
+package com.liutaoyxz.yxzmq.client.session;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;

@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -22,7 +23,9 @@ public class ConnectionContainer {
     /**
      * 连接容器,clientID 和 SocketChannel 的映射
      */
-    private static final ConcurrentHashMap<String,List<SocketChannel>>  connections = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,List<SocketChannel>>  csMap = new ConcurrentHashMap<>();
+
+    private static final CopyOnWriteArrayList<YxzDefaultConnection> CONNECTIONS = new CopyOnWriteArrayList<>();
 
     private static final Logger log = LoggerFactory.getLogger(ConnectionContainer.class);
 
@@ -43,7 +46,7 @@ public class ConnectionContainer {
             log.debug("clientID is blank");
             return null;
         }
-        return connections.get(clientID);
+        return csMap.get(clientID);
     }
 
     /**
@@ -52,16 +55,16 @@ public class ConnectionContainer {
      * @param socketChannels
      * @return
      */
-    static boolean addConnections(String clientID,List<SocketChannel> socketChannels){
+    static boolean scMap(String clientID, List<SocketChannel> socketChannels){
         if (socketChannels == null || socketChannels.isEmpty()){
             log.debug("add connections error,socketChannels is empty.clientID is {}",clientID);
             return false;
         }
         addLock.lock();
         try {
-            List<SocketChannel> ss = connections.get(clientID);
+            List<SocketChannel> ss = csMap.get(clientID);
             if (ss == null){
-                connections.putIfAbsent(clientID,socketChannels);
+                csMap.putIfAbsent(clientID,socketChannels);
                 return true;
             }
             ss.addAll(socketChannels);
@@ -74,7 +77,7 @@ public class ConnectionContainer {
     static boolean connect(String clientID, InetSocketAddress address) throws IOException{
         addLock.lock();
         try {
-            List<SocketChannel> ss = connections.get(clientID);
+            List<SocketChannel> ss = csMap.get(clientID);
             if (ss == null){
                 log.debug("connection has no socketChannel,clientID is {}",clientID);
                 return false;
@@ -90,6 +93,14 @@ public class ConnectionContainer {
 
     static String createClientID(){
         return "yxzmq-" + AUTO_INCREASE_ID.getAndIncrement();
+    }
+
+    /**
+     * connection 保存到列表
+     * @param connection
+     */
+    static void addConnection(YxzDefaultConnection connection){
+        CONNECTIONS.add(connection);
     }
 
 }

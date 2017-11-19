@@ -44,10 +44,6 @@ public abstract class AbstractSession implements Session {
         return null;
     }
 
-    @Override
-    public TextMessage createTextMessage(String s) throws JMSException {
-        return null;
-    }
 
     @Override
     public boolean getTransacted() throws JMSException {
@@ -74,25 +70,8 @@ public abstract class AbstractSession implements Session {
 
     }
 
-    @Override
-    public MessageListener getMessageListener() throws JMSException {
-        return null;
-    }
 
-    @Override
-    public void setMessageListener(MessageListener messageListener) throws JMSException {
 
-    }
-
-    @Override
-    public MessageProducer createProducer(Destination destination) throws JMSException {
-        return null;
-    }
-
-    @Override
-    public MessageConsumer createConsumer(Destination destination) throws JMSException {
-        return null;
-    }
 
     @Override
     public MessageConsumer createConsumer(Destination destination, String s) throws JMSException {
@@ -114,20 +93,6 @@ public abstract class AbstractSession implements Session {
         return null;
     }
 
-    @Override
-    public Queue createQueue(String s) throws JMSException {
-        return null;
-    }
-
-    @Override
-    public Topic createTopic(String s) throws JMSException {
-        return null;
-    }
-
-    @Override
-    public TopicSubscriber createDurableSubscriber(Topic topic, String s) throws JMSException {
-        return null;
-    }
 
     @Override
     public TopicSubscriber createDurableSubscriber(Topic topic, String s, String s1, boolean b) throws JMSException {

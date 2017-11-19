@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.io.Message;
+package com.liutaoyxz.yxzmq.client.session;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
@@ -11,6 +11,16 @@ import javax.jms.TextMessage;
 public class YxzTextMessage extends AbstratMessage implements TextMessage{
 
 
+    private String text;
+
+    YxzTextMessage(String text){
+        try {
+            this.setJMSTimestamp(System.currentTimeMillis());
+        } catch (JMSException e) {
+            e.printStackTrace();
+        }
+        this.text = text;
+    }
 
     @Override
     public void clearBody() throws JMSException {
@@ -23,12 +33,12 @@ public class YxzTextMessage extends AbstratMessage implements TextMessage{
     }
 
     @Override
-    public void setText(String s) throws JMSException {
-
+    public void setText(String text) throws JMSException {
+        this.text = text;
     }
 
     @Override
     public String getText() throws JMSException {
-        return null;
+        return this.text;
     }
 }

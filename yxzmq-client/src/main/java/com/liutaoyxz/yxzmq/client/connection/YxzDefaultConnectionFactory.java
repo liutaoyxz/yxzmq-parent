@@ -7,6 +7,11 @@ import org.slf4j.LoggerFactory;
 import javax.jms.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Doug Tao
@@ -29,6 +34,17 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
 
     public static final Logger log = LoggerFactory.getLogger(YxzDefaultConnectionFactory.class);
 
+    /**
+     * 定时任务,心跳测试,暂时没用,只是保证程序不退出
+     */
+    private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
+
+    private final CopyOnWriteArrayList<YxzDefaultConnection> connections = new CopyOnWriteArrayList<>();
+
+    private volatile boolean started = false;
+
+    private ReentrantLock startLock = new ReentrantLock();
+
     private YxzDefaultConnectionFactory(){
 
     }
@@ -42,6 +58,22 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
         return createConnection(DEFAULT_ADDRESS,null);
     }
 
+    private void checkStarted(){
+        if (!started){
+            startLock.lock();
+            try {
+                executor.schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        log.debug("factory started");
+                    }
+                },0L, TimeUnit.SECONDS);
+            }finally {
+                startLock.unlock();
+            }
+        }
+    }
+
     /**
      * 创建一个connection
      * @param address 地址  ip
@@ -51,10 +83,12 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
      */
     @Override
     public Connection createConnection(String address, String str) throws JMSException {
+        checkStarted();
         YxzDefaultConnection connection = new YxzDefaultConnection(1, createAddress(address));
         try {
             connection.setClientID(ConnectionContainer.createClientID());
             connection.init();
+            ConnectionContainer.addConnection(connection);
         } catch (IOException e) {
             log.debug("socketChannel open error",e);
             JMSException exception = JMSErrorEnum.CHANNEL_OPEN_ERROR.exception();

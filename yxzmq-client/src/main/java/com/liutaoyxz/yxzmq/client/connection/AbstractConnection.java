@@ -13,13 +13,13 @@ public abstract class AbstractConnection implements Connection {
 
 
     @Override
-    public Session createSession(int i) throws JMSException {
-        return createSession(true,i);
+    public Session createSession(int acknowledgeMode) throws JMSException {
+        return createSession(false,acknowledgeMode);
     }
 
     @Override
     public Session createSession() throws JMSException {
-        return createSession(true,0);
+        return createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     @Override

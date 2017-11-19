@@ -2,15 +2,17 @@ package com.liutaoyxz.yxzmq.broker.messagehandler;
 
 import com.liutaoyxz.yxzmq.broker.storage.MessageContainer;
 import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
-import com.liutaoyxz.yxzmq.io.protocol.Message;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
+import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
 import com.liutaoyxz.yxzmq.io.wrap.QueueMessage;
 import com.liutaoyxz.yxzmq.io.wrap.TopicMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.charset.Charset;
 
 /**
  * @author Doug Tao
@@ -65,14 +67,11 @@ public class YxzMessageHandler {
      * @return null 或者 消息字符串
      */
     private static String getMessage(ProtocolBean bean){
-        if (StringUtils.isBlank(bean.getDataClass()) || bean.getDataBytes() == null){
+        if (bean.getDataBytes() == null){
             return null;
         }
-        Message msg = (Message) ProtostuffUtil.get(bean.getDataBytes(), bean.getDataClass());
-        if (msg == null){
-            return null;
-        }
-        return msg.getContent().toString();
+
+        return new String(bean.getDataBytes(), Charset.forName(ReadContainer.DEFAULT_CHARSET));
     }
 
     /**

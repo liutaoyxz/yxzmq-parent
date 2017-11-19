@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
+import com.liutaoyxz.yxzmq.client.session.YxzDefaultSession;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -20,7 +22,23 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class YxzDefaultConnection extends AbstractConnection {
 
+    private static final AtomicInteger AUTO_INCREASE_CONNECTION_ID = new AtomicInteger(1);
+
     private final Logger log = LoggerFactory.getLogger(YxzDefaultConnection.class);
+
+    private CopyOnWriteArrayList<YxzDefaultSession> sessions = new CopyOnWriteArrayList<>();
+
+    private List<SocketChannel> channels = new CopyOnWriteArrayList<>();
+
+    /**
+     * 执行session,具体执行方式在session中
+     */
+    private ExecutorService sessionExecutor;
+
+    /**
+     * connection 自身的任务执行器
+     */
+    private ExecutorService connectionExecutor;
 
     /**
      * 是否连接到broker
@@ -41,7 +59,9 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     private ReentrantLock lock = new ReentrantLock();
 
-    private List<SocketChannel> channels = new CopyOnWriteArrayList<>();
+//    private Condition wait = lock.newCondition();
+
+
 
     /**
      * 地址
@@ -50,49 +70,104 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     private int channelNum = 1;
 
-    public YxzDefaultConnection(int channelNum,InetSocketAddress address) {
-        if (channelNum <= 0){
-            throw new IllegalArgumentException("channelNum can not be "+channelNum);
+    public YxzDefaultConnection(int channelNum, InetSocketAddress address) {
+        if (channelNum <= 0) {
+            throw new IllegalArgumentException("channelNum can not be " + channelNum);
         }
-        if (address == null){
+        if (address == null) {
             throw new NullPointerException("address can not be null");
         }
         this.channelNum = channelNum;
         this.address = address;
+
+        this.sessionExecutor = new ThreadPoolExecutor(10, Integer.MAX_VALUE, 10L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                try {
+                    String clientID = getClientID();
+                    thread.setName("session-executor-" + clientID);
+                } catch (JMSException e) {
+                    e.printStackTrace();
+                }
+                return thread;
+            }
+        });
+
+        this.connectionExecutor = new ThreadPoolExecutor(1, 1, 5L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                try {
+                    String clientID = getClientID();
+                    thread.setName("connection-executor-" + clientID);
+                } catch (JMSException e) {
+                    e.printStackTrace();
+                }
+                return thread;
+            }
+        });
+
     }
 
     /**
      * 创建一个session,实质上就是一个runnable 任务
-     * @param b
-     * @param i
+     *
+     * @param transacted      是否是事物
+     * @param acknowledgeMode 打招呼模式
      * @return
      * @throws JMSException
      */
     @Override
-    public Session createSession(boolean b, int i) throws JMSException {
-        return null;
+    public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
+        if (!connected){
+            throw JMSErrorEnum.CONNECTION_NOT_START.exception();
+        }
+        YxzDefaultSession session = new YxzDefaultSession(this);
+        this.sessions.add(session);
+        this.sessionExecutor.execute(session);
+        return session;
+    }
+
+    /**
+     * 添加一个任务
+     *
+     * @param task
+     * @throws JMSException
+     */
+    public void addTask(YxzConnectionTask task) throws JMSException {
+        if (connected) {
+            this.connectionExecutor.execute(task);
+        }
     }
 
     /**
      * 开始连接
+     * 阻塞本线程
+     *
      * @throws JMSException
      */
     @Override
     public void start() throws JMSException {
         lock.lock();
         try {
-            if (!inited){
+            init();
+            if (!inited) {
                 throw JMSErrorEnum.CONNECTION_NOT_INIT.exception();
             }
-            ConnectionContainer.addConnections(clientID,channels);
-            ConnectionContainer.connect(getClientID(),address);
+            ConnectionContainer.scMap(clientID, channels);
+            ConnectionContainer.connect(getClientID(), address);
             this.connected = true;
-        }catch (IOException e){
-            log.debug("start connection error",e);
+            final String clientID = YxzDefaultConnection.this.getClientID();
+            log.debug("connection start,clientID is {}", clientID);
+        } catch (IOException e) {
+            log.debug("start connection error", e);
             JMSException jmsException = JMSErrorEnum.CONNECT_ERROR.exception();
             jmsException.setLinkedException(e);
             throw jmsException;
-        }finally {
+        } finally {
             lock.unlock();
         }
 
@@ -100,6 +175,7 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     /**
      * 停止发送数据,但是连接不关闭,不能够创建新的session
+     *
      * @throws JMSException
      */
     @Override
@@ -109,6 +185,7 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     /**
      * 关闭连接 ,不能再创建session,已经存在的session需要处理完成
+     *
      * @throws JMSException
      */
     @Override
@@ -119,7 +196,7 @@ public class YxzDefaultConnection extends AbstractConnection {
     void init() throws IOException {
         lock.lock();
         try {
-            if (inited){
+            if (inited) {
                 log.debug("already inited");
                 return;
             }
@@ -127,7 +204,7 @@ public class YxzDefaultConnection extends AbstractConnection {
                 SocketChannel sc = SocketChannel.open();
                 this.channels.add(sc);
             }
-        }finally {
+        } finally {
             this.inited = true;
             lock.unlock();
         }
@@ -135,9 +212,14 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     @Override
     public void setClientID(String clientID) throws JMSException {
-        if (inited){
+        if (inited) {
             return;
         }
         this.clientID = clientID;
     }
+
+    List<SocketChannel> getChannels(){
+        return this.channels;
+    }
+
 }
