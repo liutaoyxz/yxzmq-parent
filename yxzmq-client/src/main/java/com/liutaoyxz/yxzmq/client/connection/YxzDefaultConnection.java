@@ -32,6 +32,8 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     private BlockingQueue<SocketChannel> activeChannels;
 
+    private SocketChannel assistChannel;
+
     /**
      * 执行session,具体执行方式在session中
      */
@@ -156,12 +158,12 @@ public class YxzDefaultConnection extends AbstractConnection {
     public void start() throws JMSException {
         lock.lock();
         try {
-            init();
             if (!inited) {
                 throw JMSErrorEnum.CONNECTION_NOT_INIT.exception();
             }
             ConnectionContainer.scMap(clientID, channels);
             ConnectionContainer.connect(getClientID(), address);
+            // TODO: 2017/11/20 注册辅助channel和活跃channel
             activeChannels.addAll(channels);
             this.connected = true;
             final String clientID = YxzDefaultConnection.this.getClientID();
@@ -204,6 +206,7 @@ public class YxzDefaultConnection extends AbstractConnection {
                 log.debug("already inited");
                 return;
             }
+            assistChannel = SocketChannel.open();
             for (int i = 0; i < channelNum; i++) {
                 SocketChannel sc = SocketChannel.open();
                 this.channels.add(sc);

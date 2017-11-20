@@ -26,6 +26,6 @@ public class DefaultChannelHandler extends AbstractChannelHandler {
 
     @Override
     protected void afterDiscontected(Client client) {
-
+        
     }
 }

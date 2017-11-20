@@ -11,6 +11,7 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author Doug Tao
@@ -25,6 +26,11 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
     protected Logger log;
 
     private Map<SocketChannel,YxzClient> scMap = new ConcurrentHashMap<>();
+
+    /**
+     * 未注册到group的连接
+     */
+    private CopyOnWriteArrayList<YxzClient> edenClient = new CopyOnWriteArrayList<>();
 
     /**
      * groupId 和 Group映射
@@ -88,22 +94,23 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
             SocketAddress remoteAddress = channel.getRemoteAddress();
             if (remoteAddress == null){
                 log.debug("add client,but remoteAddress is null");
-                YxzClient rmClient = scMap.remove(channel);
+                scMap.remove(channel);
                 return null;
             }
             String address = remoteAddress.toString();
             if (StringUtils.isBlank(address)){
                 log.debug("add client,but address is blank");
-                YxzClient rmClient = scMap.remove(channel);
+                scMap.remove(channel);
                 return null;
             }
             Integer clientId = Math.abs(channel.hashCode());
             YxzClient client = new YxzClient(clientId.toString(),channel,address);
             scMap.put(channel,client);
+            this.edenClient.add(client);
             return client;
         } catch (IOException e) {
             log.error("get remoteAddress error",e);
-            YxzClient rmClient = scMap.remove(channel);
+            scMap.remove(channel);
             return null;
         }
     }

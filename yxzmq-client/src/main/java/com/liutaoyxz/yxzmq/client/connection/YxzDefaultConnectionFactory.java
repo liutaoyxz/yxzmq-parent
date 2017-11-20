@@ -7,10 +7,8 @@ import org.slf4j.LoggerFactory;
 import javax.jms.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.nio.channels.Selector;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -33,6 +31,11 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
     private static final YxzDefaultConnectionFactory FACTORY = new YxzDefaultConnectionFactory();
 
     public static final Logger log = LoggerFactory.getLogger(YxzDefaultConnectionFactory.class);
+
+    private ExecutorService selectorTask = new ThreadPoolExecutor(1,1,5L,
+            TimeUnit.SECONDS,new LinkedBlockingQueue<>());
+
+    private Selector selector;
 
     /**
      * 定时任务,心跳测试,暂时没用,只是保证程序不退出
@@ -62,12 +65,17 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
         if (!started){
             startLock.lock();
             try {
+                this.selector = Selector.open();
+                FactoryTask task = new FactoryTask(this.selector);
+
                 executor.schedule(new Runnable() {
                     @Override
                     public void run() {
                         log.debug("factory started");
                     }
                 },0L, TimeUnit.SECONDS);
+            }catch (IOException e){
+                e.printStackTrace();
             }finally {
                 startLock.unlock();
             }
