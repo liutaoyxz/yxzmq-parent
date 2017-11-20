@@ -14,7 +14,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author Doug Tao
  * @Date: 10:51 2017/11/15
- * @Description:
+ * @Description: 重新修改连接的管理, 每一个客户端要求创建至少一个主channel 和 一个 辅助channel,
+ * 主 channel 主要负责发送queue 和 publish 和 subscribe, 辅助channel 负责 心跳检查,注册主channel
+ * 客户端刚连接过来的channel 属于无状态 channel,只有在辅助channel 注册之后才允许发送数据
+ *
  */
 public abstract class AbstractChannelHandler implements ChannelHandler {
 

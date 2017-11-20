@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Doug Tao
  * @Date 下午9:32 2017/11/18
  * @Description: 采用单例模式
- * 一个连接对应一个或者多个channel,一个session只能对应一个channel.
+ * 一个连接对应一个或者多个channel
  * 连接在start()之后与broker 开始连接,保存到ChannelContainer中
  *
  */
@@ -84,7 +84,7 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
     @Override
     public Connection createConnection(String address, String str) throws JMSException {
         checkStarted();
-        YxzDefaultConnection connection = new YxzDefaultConnection(5, createAddress(address));
+        YxzDefaultConnection connection = new YxzDefaultConnection(3, createAddress(address));
         try {
             connection.setClientID(ConnectionContainer.createClientID());
             connection.init();
