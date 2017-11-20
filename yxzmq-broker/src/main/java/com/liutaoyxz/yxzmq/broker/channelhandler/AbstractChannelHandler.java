@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
 import com.liutaoyxz.yxzmq.broker.Client;
+import com.liutaoyxz.yxzmq.broker.Group;
 import com.liutaoyxz.yxzmq.broker.YxzClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -24,6 +25,11 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
     protected Logger log;
 
     private Map<SocketChannel,YxzClient> scMap = new ConcurrentHashMap<>();
+
+    /**
+     * groupId 和 Group映射
+     */
+    private ConcurrentHashMap<String,Group> groupMap = new ConcurrentHashMap<>();
 
     protected AbstractChannelHandler(Logger log) {
         this.log = log;

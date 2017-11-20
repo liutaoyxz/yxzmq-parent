@@ -49,4 +49,6 @@ public interface Client {
 
     List<ProtocolBean> read(ByteBuffer buffer);
 
+    Group parent();
+
 }

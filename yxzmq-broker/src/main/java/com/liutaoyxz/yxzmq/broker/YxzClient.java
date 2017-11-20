@@ -26,6 +26,8 @@ public class YxzClient implements Client{
 
     private SocketChannel channel;
 
+    private Group parent;
+
     private String address;
 
     private Lock lock = new ReentrantLock();
@@ -102,6 +104,11 @@ public class YxzClient implements Client{
     @Override
     public SocketChannel channel() {
         return channel;
+    }
+
+    @Override
+    public Group parent() {
+        return this.parent;
     }
 
     @Override
