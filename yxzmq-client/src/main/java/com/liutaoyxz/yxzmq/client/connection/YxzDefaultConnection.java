@@ -30,6 +30,8 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     private List<SocketChannel> channels = new CopyOnWriteArrayList<>();
 
+    private BlockingQueue<SocketChannel> activeChannels;
+
     /**
      * 执行session,具体执行方式在session中
      */
@@ -95,7 +97,7 @@ public class YxzDefaultConnection extends AbstractConnection {
             }
         });
 
-        this.connectionExecutor = new ThreadPoolExecutor(1, 1, 5L,
+        this.connectionExecutor = new ThreadPoolExecutor(channelNum, channelNum, 5L,
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -109,6 +111,7 @@ public class YxzDefaultConnection extends AbstractConnection {
                 return thread;
             }
         });
+        this.activeChannels = new ArrayBlockingQueue(channelNum);
 
     }
 
@@ -158,6 +161,7 @@ public class YxzDefaultConnection extends AbstractConnection {
             }
             ConnectionContainer.scMap(clientID, channels);
             ConnectionContainer.connect(getClientID(), address);
+            activeChannels.addAll(channels);
             this.connected = true;
             final String clientID = YxzDefaultConnection.this.getClientID();
             log.debug("connection start,clientID is {}", clientID);
@@ -219,6 +223,19 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     List<SocketChannel> getChannels(){
         return this.channels;
+    }
+
+    SocketChannel applyChannel(){
+        try {
+            return activeChannels.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    void returnChannel(SocketChannel socketChannel){
+        this.activeChannels.add(socketChannel);
     }
 
 }

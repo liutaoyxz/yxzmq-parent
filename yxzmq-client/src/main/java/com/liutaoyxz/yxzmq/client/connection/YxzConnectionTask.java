@@ -43,24 +43,25 @@ public class YxzConnectionTask implements Runnable {
     public void run() {
         if (this.type == SEND_DATA) {
             //发送数据
-            List<SocketChannel> channels = this.connection.getChannels();
-            for (SocketChannel sc : channels) {
+            SocketChannel sc = connection.applyChannel();
+            try {
                 for (byte[] bytes : data) {
                     ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-                    try {
+
+                    sc.write(byteBuffer);
+                    while (byteBuffer.hasRemaining()) {
                         sc.write(byteBuffer);
-                        while (byteBuffer.hasRemaining()){
-                            sc.write(byteBuffer);
-                        }
-                    } catch (IOException e) {
-                        log.debug("send data error",e);
-                        e.printStackTrace();
                     }
                 }
-                return ;
+            } catch (IOException e) {
+                log.debug("send data error", e);
+                e.printStackTrace();
+            } finally {
+                connection.returnChannel(sc);
             }
-
-
+            return;
         }
     }
+
+
 }
