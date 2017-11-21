@@ -35,7 +35,7 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
 
     public static final Logger log = LoggerFactory.getLogger(YxzDefaultConnectionFactory.class);
 
-    private ExecutorService selectorTask = new ThreadPoolExecutor(1, 1, 5L,
+    private static ExecutorService selectExecutor = new ThreadPoolExecutor(1, 1, 5L,
             TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -46,6 +46,8 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
     });
 
     private static Selector selector;
+
+    private static FactoryTask task;
 
     /**
      * 定时任务,心跳测试,暂时没用,只是保证程序不退出
@@ -83,8 +85,7 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
             startLock.lock();
             try {
                 selector = Selector.open();
-                FactoryTask task = new FactoryTask(selector);
-                selectorTask.execute(task);
+                task = new FactoryTask(selector);
                 executor.schedule(new Runnable() {
                     @Override
                     public void run() {
@@ -97,6 +98,15 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
                 startLock.unlock();
             }
         }
+    }
+
+    static void startSelect(){
+        selectExecutor.execute(task);
+        task.start();
+    }
+
+    static void stopSelect(){
+        task.stop();
     }
 
     /**

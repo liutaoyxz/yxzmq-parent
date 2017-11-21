@@ -85,6 +85,7 @@ public class YxzClientChannel {
     public void read(ByteBuffer buffer) {
         log.debug("start read thread is {}",Thread.currentThread().getName());
         this.readContainer.read(buffer);
+        stopRead();
         List<ProtocolBean> beans = this.readContainer.flush();
         for (ProtocolBean bean : beans){
             handlerBean(bean);
@@ -139,9 +140,12 @@ public class YxzClientChannel {
             case CommonConstant.Command.REGISTER_SUCCESS:
                 if (isAssistChannel){
                     log.debug("assistChannel register success");
+                    this.registered = true;
+                    this.parent.setGroupId(groupId);
                     this.parent.assistRegisterDown();
                 }else {
                     log.debug("mainChannel register success");
+                    this.registered = true;
                     this.parent.registerDown(this);
                 }
                 break;

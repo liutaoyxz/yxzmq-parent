@@ -47,6 +47,9 @@ public class YxzMessageHandler {
             case CommonConstant.Command.ASSIST_REGISTER:
                 handlerAssistRegister(bean,client);
                 break;
+            case CommonConstant.Command.MAIN_REGISTER:
+                handlerMainRegister(bean,client);
+                break;
             default:
                 log.debug("handler protocolBean error,command is {}",command);
                 break;
@@ -132,6 +135,7 @@ public class YxzMessageHandler {
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();
             bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
+            bean.setGroupId(group.groupId());
             List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
             for (byte[] b:bytes){
                 ByteBuffer buffer = ByteBuffer.wrap(b);
@@ -142,10 +146,47 @@ public class YxzMessageHandler {
             }
 
         }else {
-            //已经注册过
-
+            //不是第一次,删掉之前的,保存现在的
+            Group group = client.handler().getGroup(groupId);
+            group.setGroupId(Group.nextGroupId());
+            group.setAssistClient(client);
+            Metadata metadata = new Metadata();
+            bean  = new ProtocolBean();
+            bean.setGroupId(group.groupId());
+            bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
+            List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
+            for (byte[] b:bytes){
+                ByteBuffer buffer = ByteBuffer.wrap(b);
+                channel.write(buffer);
+                while (buffer.hasRemaining()){
+                    channel.write(buffer);
+                }
+            }
         }
     }
 
+    private static void handlerMainRegister(ProtocolBean bean,Client client) throws IOException {
+        String groupId = bean.getGroupId();
+        SocketChannel channel = client.channel();
+        if (StringUtils.isBlank(groupId)){
+            //有问题
 
+        }else {
+            //注册
+            Group group = client.handler().getGroup(groupId);
+            group.addActiveClient(client);
+            Metadata metadata = new Metadata();
+            bean  = new ProtocolBean();
+            bean.setGroupId(groupId);
+            bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
+            List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
+            for (byte[] b:bytes){
+                ByteBuffer buffer = ByteBuffer.wrap(b);
+                channel.write(buffer);
+                while (buffer.hasRemaining()){
+                    channel.write(buffer);
+                }
+            }
+        }
+    }
 }

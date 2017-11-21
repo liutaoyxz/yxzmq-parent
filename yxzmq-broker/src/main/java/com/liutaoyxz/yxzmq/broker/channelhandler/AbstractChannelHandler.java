@@ -148,4 +148,9 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
     public void addGroup(Group group) {
         this.groupMap.put(group.groupId(),group);
     }
+
+    @Override
+    public Group getGroup(String groupId) {
+        return this.groupMap.get(groupId);
+    }
 }

@@ -43,7 +43,7 @@ public class ConnectionContainer {
 
     /**
      * 获取channels
-     * @param clientID clientID 与broker端的 clientId 不是一个
+     * @param groupId groupId
      * @return
      */
     static List<YxzClientChannel> getChannels(String groupId){
@@ -57,7 +57,7 @@ public class ConnectionContainer {
     /**
      * 向容器中添加Connection
      * @param clientID
-     * @param socketChannels
+     * @param channels
      * @return
      */
     static boolean scMap(String clientID, List<YxzClientChannel> channels){
@@ -68,6 +68,9 @@ public class ConnectionContainer {
         addLock.lock();
         try {
             List<YxzClientChannel> ss = csMap.get(clientID);
+            for (YxzClientChannel c: channels){
+                syMap.put(c.getChannel(),c);
+            }
             if (ss == null){
                 csMap.putIfAbsent(clientID,channels);
                 return true;
@@ -79,6 +82,7 @@ public class ConnectionContainer {
         }
     }
 
+
     static boolean connect(String clientID, InetSocketAddress address) throws IOException{
         addLock.lock();
         try {
@@ -88,8 +92,8 @@ public class ConnectionContainer {
                 return false;
             }
             for (YxzClientChannel channel : ss){
-                channel.getChannel().connect(address);
                 YxzDefaultConnectionFactory.registerSocketChannel(channel.getChannel());
+                channel.getChannel().connect(address);
             }
         }finally {
             addLock.unlock();

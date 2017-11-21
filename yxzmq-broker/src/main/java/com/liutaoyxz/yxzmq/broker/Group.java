@@ -1,9 +1,7 @@
 package com.liutaoyxz.yxzmq.broker;
 
-import com.liutaoyxz.yxzmq.broker.Client;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,6 +38,14 @@ public class Group {
 
     public Client assistClient(){
         return this.assistClient;
+    }
+
+    public void setAssistClient(Client assistClient){
+        this.assistClient = assistClient;
+    }
+
+    public void addActiveClient(Client client){
+        this.clients.add(client);
     }
 
     public String groupId(){

@@ -176,13 +176,14 @@ public class YxzDefaultConnection extends AbstractConnection {
                 throw JMSErrorEnum.CONNECTION_NOT_INIT.exception();
             }
             ConnectionContainer.scMap(clientID, channels);
-            ConnectionContainer.connect(getClientID(), address);
             // TODO: 2017/11/20 注册辅助channel和活跃channel
+
             this.assistRegister();
             this.assistRegisterCountDownLatch.await();
-
-            System.out.println("assistRegister success");
-
+            log.debug("assistRegister success");
+            this.mainRegister();
+            this.registerCountDownLatch.await();
+            log.debug("main register success");
             this.connected = true;
             final String clientID = YxzDefaultConnection.this.getClientID();
             log.debug("connection start,clientID is {}", clientID);
@@ -230,10 +231,17 @@ public class YxzDefaultConnection extends AbstractConnection {
                 return;
             }
             assistChannel = new YxzClientChannel(this,SocketChannel.open(),true);
+            this.channels.add(assistChannel);
+            SocketChannel asc = assistChannel.getChannel();
+            YxzDefaultConnectionFactory.registerSocketChannel(asc);
+            asc.connect(address);
             for (int i = 0; i < channelNum; i++) {
                 YxzClientChannel sc = new YxzClientChannel(this,SocketChannel.open(),false);
+                YxzDefaultConnectionFactory.registerSocketChannel(sc.getChannel());
+                sc.getChannel().connect(address);
                 this.channels.add(sc);
             }
+            YxzDefaultConnectionFactory.startSelect();
         } finally {
             this.inited = true;
             lock.unlock();
@@ -293,7 +301,6 @@ public class YxzDefaultConnection extends AbstractConnection {
     void assistRegister() throws IOException {
         YxzClientChannel assistChannel = this.assistChannel;
         SocketChannel sc = assistChannel.getChannel();
-        sc.connect(address);
         ProtocolBean bean = new ProtocolBean();
         bean.setCommand(CommonConstant.Command.ASSIST_REGISTER);
         Metadata metadata = new Metadata();
@@ -305,6 +312,32 @@ public class YxzDefaultConnection extends AbstractConnection {
                 sc.write(buffer);
             }
         }
+    }
+
+    /**
+     * 主channel 注册
+     * @throws IOException
+     */
+    void mainRegister() throws IOException {
+        for (YxzClientChannel yc : channels){
+            if (yc.isRegistered()){
+                continue;
+            }
+            SocketChannel sc = yc.getChannel();
+            ProtocolBean bean = new ProtocolBean();
+            bean.setGroupId(groupId);
+            bean.setCommand(CommonConstant.Command.MAIN_REGISTER);
+            Metadata metadata = new Metadata();
+            List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
+            for (byte[] b : bytes){
+                ByteBuffer buffer = ByteBuffer.wrap(b);
+                sc.write(buffer);
+                while (buffer.hasRemaining()){
+                    sc.write(buffer);
+                }
+            }
+        }
+
     }
 
 }

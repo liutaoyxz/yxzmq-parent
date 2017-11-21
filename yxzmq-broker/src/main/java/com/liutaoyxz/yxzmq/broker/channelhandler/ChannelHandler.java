@@ -2,7 +2,6 @@ package com.liutaoyxz.yxzmq.broker.channelhandler;
 
 import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.Group;
-import com.liutaoyxz.yxzmq.broker.YxzClient;
 
 import java.nio.channels.SocketChannel;
 
@@ -41,5 +40,7 @@ public interface ChannelHandler {
      * @param group
      */
     void addGroup(Group group);
+
+    Group getGroup(String groupId);
 
 }
