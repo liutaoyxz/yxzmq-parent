@@ -23,7 +23,12 @@ public class ConnectionContainer {
     /**
      * 连接容器,clientID 和 SocketChannel 的映射
      */
-    private static final ConcurrentHashMap<String,List<SocketChannel>>  csMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,List<YxzClientChannel>>  csMap = new ConcurrentHashMap<>();
+
+    /**
+     * socketChannel 和 YxzClientChannel 的对应关系,方便确认到具体的parent
+     */
+    private static final ConcurrentHashMap<SocketChannel,YxzClientChannel> syMap = new ConcurrentHashMap<>();
 
     private static final CopyOnWriteArrayList<YxzDefaultConnection> CONNECTIONS = new CopyOnWriteArrayList<>();
 
@@ -41,12 +46,12 @@ public class ConnectionContainer {
      * @param clientID clientID 与broker端的 clientId 不是一个
      * @return
      */
-    static List<SocketChannel> getChannels(String clientID){
-        if (StringUtils.isBlank(clientID)){
+    static List<YxzClientChannel> getChannels(String groupId){
+        if (StringUtils.isBlank(groupId)){
             log.debug("clientID is blank");
             return null;
         }
-        return csMap.get(clientID);
+        return csMap.get(groupId);
     }
 
     /**
@@ -55,19 +60,19 @@ public class ConnectionContainer {
      * @param socketChannels
      * @return
      */
-    static boolean scMap(String clientID, List<SocketChannel> socketChannels){
-        if (socketChannels == null || socketChannels.isEmpty()){
+    static boolean scMap(String clientID, List<YxzClientChannel> channels){
+        if (channels == null || channels.isEmpty()){
             log.debug("add connections error,socketChannels is empty.clientID is {}",clientID);
             return false;
         }
         addLock.lock();
         try {
-            List<SocketChannel> ss = csMap.get(clientID);
+            List<YxzClientChannel> ss = csMap.get(clientID);
             if (ss == null){
-                csMap.putIfAbsent(clientID,socketChannels);
+                csMap.putIfAbsent(clientID,channels);
                 return true;
             }
-            ss.addAll(socketChannels);
+            ss.addAll(channels);
             return true;
         }finally {
             addLock.unlock();
@@ -77,18 +82,28 @@ public class ConnectionContainer {
     static boolean connect(String clientID, InetSocketAddress address) throws IOException{
         addLock.lock();
         try {
-            List<SocketChannel> ss = csMap.get(clientID);
+            List<YxzClientChannel> ss = csMap.get(clientID);
             if (ss == null){
                 log.debug("connection has no socketChannel,clientID is {}",clientID);
                 return false;
             }
-            for (SocketChannel channel : ss){
-                channel.connect(address);
+            for (YxzClientChannel channel : ss){
+                channel.getChannel().connect(address);
+                YxzDefaultConnectionFactory.registerSocketChannel(channel.getChannel());
             }
         }finally {
             addLock.unlock();
         }
         return true;
+    }
+
+    /**
+     * 根据channel获取YxzClientChannel
+     * @param channel
+     * @return
+     */
+    static YxzClientChannel getClientChannelBySocketChannel(SocketChannel channel){
+        return syMap.get(channel);
     }
 
     static String createClientID(){

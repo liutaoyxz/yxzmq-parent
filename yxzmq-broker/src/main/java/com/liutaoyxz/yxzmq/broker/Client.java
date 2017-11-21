@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.broker;
 
+import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
 import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 
@@ -50,5 +51,8 @@ public interface Client {
     List<ProtocolBean> read(ByteBuffer buffer);
 
     Group parent();
+
+    ChannelHandler handler();
+
 
 }

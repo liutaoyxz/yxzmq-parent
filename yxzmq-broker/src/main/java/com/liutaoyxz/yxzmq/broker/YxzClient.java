@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.broker;
 
+import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import org.slf4j.Logger;
@@ -32,12 +33,15 @@ public class YxzClient implements Client{
 
     private Lock lock = new ReentrantLock();
 
+    private ChannelHandler handler;
+
     private volatile boolean isReading = false;
 
-    public YxzClient(String clientId, SocketChannel channel, String address) {
+    public YxzClient(String clientId, SocketChannel channel, String address,ChannelHandler handler) {
         this.clientId = clientId;
         this.channel = channel;
         this.address = address;
+        this.handler = handler;
     }
 
     @Override
@@ -109,6 +113,11 @@ public class YxzClient implements Client{
     @Override
     public Group parent() {
         return this.parent;
+    }
+
+    @Override
+    public ChannelHandler handler() {
+        return this.handler;
     }
 
     @Override

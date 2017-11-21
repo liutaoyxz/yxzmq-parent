@@ -104,7 +104,7 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
                 return null;
             }
             Integer clientId = Math.abs(channel.hashCode());
-            YxzClient client = new YxzClient(clientId.toString(),channel,address);
+            YxzClient client = new YxzClient(clientId.toString(),channel,address,this);
             scMap.put(channel,client);
             this.edenClient.add(client);
             return client;
@@ -144,4 +144,8 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
         }
     }
 
+    @Override
+    public void addGroup(Group group) {
+        this.groupMap.put(group.groupId(),group);
+    }
 }

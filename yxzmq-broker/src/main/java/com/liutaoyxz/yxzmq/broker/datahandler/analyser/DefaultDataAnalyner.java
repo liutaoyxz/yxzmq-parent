@@ -40,7 +40,6 @@ public class DefaultDataAnalyner implements Runnable {
             ByteBuffer buffer = ByteBuffer.allocate(128);
 
             // TODO: 2017/11/15 read 时抛出IOException 初步判断为连接已经中断
-            //读取协议头
             int readCount = socketChannel.read(buffer);
             if (readCount == -1) {
                 //连接中断
@@ -55,7 +54,7 @@ public class DefaultDataAnalyner implements Runnable {
             List<ProtocolBean> beans = client.read(buffer);
             log.debug("beans :{}", beans);
             for (ProtocolBean b : beans) {
-                YxzMessageHandler.handlerProtocolBean(b);
+                YxzMessageHandler.handlerProtocolBean(b,client);
             }
             return;
         } catch (IOException e) {

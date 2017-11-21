@@ -60,7 +60,9 @@ public class FactoryTask implements Runnable {
             if (key.isReadable()) {
                 // 读取数据
                 socketChannel = (SocketChannel)key.channel();
-//                socketChannel.read()
+//                socketChannel.read()1
+                YxzClientChannel cc = ConnectionContainer.getClientChannelBySocketChannel(socketChannel);
+
 
             }
             if (key.isWritable()) {

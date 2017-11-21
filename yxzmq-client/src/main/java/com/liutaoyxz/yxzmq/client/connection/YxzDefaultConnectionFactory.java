@@ -7,7 +7,10 @@ import org.slf4j.LoggerFactory;
 import javax.jms.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -32,15 +35,29 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
 
     public static final Logger log = LoggerFactory.getLogger(YxzDefaultConnectionFactory.class);
 
-    private ExecutorService selectorTask = new ThreadPoolExecutor(1,1,5L,
-            TimeUnit.SECONDS,new LinkedBlockingQueue<>());
+    private ExecutorService selectorTask = new ThreadPoolExecutor(1, 1, 5L,
+            TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName("factory-task");
+            return thread;
+        }
+    });
 
-    private Selector selector;
+    private static Selector selector;
 
     /**
      * 定时任务,心跳测试,暂时没用,只是保证程序不退出
      */
-    private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
+    private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName("scheduled-task");
+            return thread;
+        }
+    });
 
     private final CopyOnWriteArrayList<YxzDefaultConnection> connections = new CopyOnWriteArrayList<>();
 
@@ -65,9 +82,9 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
         if (!started){
             startLock.lock();
             try {
-                this.selector = Selector.open();
-                FactoryTask task = new FactoryTask(this.selector);
-
+                selector = Selector.open();
+                FactoryTask task = new FactoryTask(selector);
+                selectorTask.execute(task);
                 executor.schedule(new Runnable() {
                     @Override
                     public void run() {
@@ -111,6 +128,18 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
         String ip = ss[0];
         int port = Integer.valueOf(ss[1]);
         return new InetSocketAddress(ip,port);
+    }
+
+    /**
+     * 把socketChannel交给selector管理
+     * @param channel
+     * @throws IOException
+     */
+    static void registerSocketChannel(SocketChannel channel) throws IOException {
+        channel.configureBlocking(false);
+//        selector.wakeup();
+        channel.register(selector, SelectionKey.OP_CONNECT, ByteBuffer.allocate(128));
+        log.debug("after register");
     }
 
     @Override
