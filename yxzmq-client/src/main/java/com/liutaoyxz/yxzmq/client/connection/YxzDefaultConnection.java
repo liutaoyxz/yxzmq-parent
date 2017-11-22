@@ -192,7 +192,6 @@ public class YxzDefaultConnection extends AbstractConnection {
                 throw JMSErrorEnum.CONNECTION_NOT_INIT.exception();
             }
             ConnectionContainer.scMap(clientID, channels);
-            // TODO: 2017/11/20 注册辅助channel和活跃channel
 
             this.assistRegister();
             this.assistRegisterCountDownLatch.await();
@@ -395,7 +394,32 @@ public class YxzDefaultConnection extends AbstractConnection {
         }catch (JMSException e){
             log.debug("sendMessageToConsumer error",e);
         }
+    }
 
+    void disconnected(YxzClientChannel channel) throws IOException {
+        if (channel == null){
+            return ;
+        }
+        SocketChannel sc = channel.getChannel();
+        if (sc == null){
+            return;
+        }
+        if (!sc.isOpen()){
+            ConnectionContainer.removeClientChannel(channel);
+            return;
+        }
+        if (!sc.isConnected()){
+            sc.close();
+        }
+        sc.close();
+        ConnectionContainer.removeClientChannel(channel);
+        if (channel.isAssistChannel()){
+            //辅助channel
+            log.debug("assist channel disconnect");
+        }else {
+            this.activeChannels.remove(channel);
+            this.channels.remove(channel);
+        }
     }
 
 }

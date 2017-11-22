@@ -84,7 +84,6 @@ public class YxzClientChannel {
         return false;
     }
 
-
     public void read(ByteBuffer buffer) {
         log.debug("start read thread is {}",Thread.currentThread().getName());
         this.readContainer.read(buffer);
@@ -104,8 +103,6 @@ public class YxzClientChannel {
             lock.unlock();
         }
     }
-
-
 
     public SocketChannel getChannel() {
         return channel;
@@ -131,6 +128,9 @@ public class YxzClientChannel {
         this.registered = registered;
     }
 
+    public boolean isAssistChannel(){
+        return this.isAssistChannel;
+    }
 
     /**
      * 处理协议
@@ -165,8 +165,6 @@ public class YxzClientChannel {
                 log.debug("handlerBean error,command is {}",command);
                 break;
         }
-
-
     }
 
     @Override

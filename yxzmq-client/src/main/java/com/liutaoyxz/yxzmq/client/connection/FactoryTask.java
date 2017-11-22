@@ -57,8 +57,9 @@ public class FactoryTask implements Runnable {
         }
     }
 
-    private void handleKey(SelectionKey key) throws IOException{
+    private void handleKey(SelectionKey key){
         SocketChannel socketChannel = null;
+        YxzClientChannel cc = null;
         try {
             if (key.isAcceptable()) {
 
@@ -76,14 +77,13 @@ public class FactoryTask implements Runnable {
             if (key.isReadable()) {
                 // 读取数据
                 socketChannel = (SocketChannel)key.channel();
-                YxzClientChannel cc = ConnectionContainer.getClientChannelBySocketChannel(socketChannel);
+                cc = ConnectionContainer.getClientChannelBySocketChannel(socketChannel);
                 ByteBuffer buffer = ByteBuffer.allocate(128);
                 int readCount = socketChannel.read(buffer);
                 if (readCount == -1) {
                     //连接中断
                     log.debug("readCount -1,disconnect");
-                    socketChannel.close();
-                    // TODO: 2017/11/21 连接中断问题,在客户端还没有处理
+                    cc.getParent().disconnected(cc);
                     return;
                 }
                 if (readCount == 0) {
@@ -102,7 +102,21 @@ public class FactoryTask implements Runnable {
             }
         } catch (CancelledKeyException e) {
             log.debug("channel disconnect by CancelledKeyException");
-//            handler.disconnect(socketChannel);
+            if (cc != null){
+                try {
+                    cc.getParent().disconnected(cc);
+                } catch (IOException e1) {
+                    log.debug("disconnect error",e);
+                }
+            }
+        }catch (IOException e){
+            if (cc != null){
+                try {
+                    cc.getParent().disconnected(cc);
+                } catch (IOException e1) {
+                    log.debug("disconnect error",e);
+                }
+            }
         }
     }
 

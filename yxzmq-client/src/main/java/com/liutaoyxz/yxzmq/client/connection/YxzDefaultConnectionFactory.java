@@ -147,7 +147,6 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
      */
     static void registerSocketChannel(SocketChannel channel) throws IOException {
         channel.configureBlocking(false);
-//        selector.wakeup();
         channel.register(selector, SelectionKey.OP_CONNECT, ByteBuffer.allocate(128));
         log.debug("after register");
     }

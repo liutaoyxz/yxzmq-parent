@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.JMSException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
@@ -41,18 +42,6 @@ public class ConnectionContainer {
      */
     private static final ReentrantLock addLock = new ReentrantLock();
 
-    /**
-     * 获取channels
-     * @param groupId groupId
-     * @return
-     */
-    static List<YxzClientChannel> getChannels(String groupId){
-        if (StringUtils.isBlank(groupId)){
-            log.debug("clientID is blank");
-            return null;
-        }
-        return csMap.get(groupId);
-    }
 
     /**
      * 向容器中添加Connection
@@ -83,23 +72,7 @@ public class ConnectionContainer {
     }
 
 
-    static boolean connect(String clientID, InetSocketAddress address) throws IOException{
-        addLock.lock();
-        try {
-            List<YxzClientChannel> ss = csMap.get(clientID);
-            if (ss == null){
-                log.debug("connection has no socketChannel,clientID is {}",clientID);
-                return false;
-            }
-            for (YxzClientChannel channel : ss){
-                YxzDefaultConnectionFactory.registerSocketChannel(channel.getChannel());
-                channel.getChannel().connect(address);
-            }
-        }finally {
-            addLock.unlock();
-        }
-        return true;
-    }
+
 
     /**
      * 根据channel获取YxzClientChannel
@@ -112,6 +85,28 @@ public class ConnectionContainer {
 
     static String createClientID(){
         return "yxzmq-" + AUTO_INCREASE_ID.getAndIncrement();
+    }
+
+    static void removeClientChannel(YxzClientChannel channel){
+        if (channel == null){
+            return;
+        }
+        if (channel.getChannel() == null){
+            syMap.remove(channel);
+            return ;
+        }
+
+        try {
+            SocketChannel sc = channel.getChannel();
+            String clientID = channel.getParent().getClientID();
+            List<YxzClientChannel> channels = csMap.get(clientID);
+            if (channels != null){
+                channels.remove(channel);
+            }
+            syMap.remove(channel);
+        } catch (JMSException e) {
+            log.debug("removeClientChannel error",e);
+        }
     }
 
     /**
