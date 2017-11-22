@@ -82,6 +82,7 @@ public class FactoryTask implements Runnable {
                 if (readCount == -1) {
                     //连接中断
                     log.debug("readCount -1,disconnect");
+                    socketChannel.close();
                     // TODO: 2017/11/21 连接中断问题,在客户端还没有处理
                     return;
                 }

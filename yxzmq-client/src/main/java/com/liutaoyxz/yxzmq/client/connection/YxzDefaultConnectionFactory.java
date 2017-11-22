@@ -119,7 +119,7 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
     @Override
     public Connection createConnection(String address, String str) throws JMSException {
         checkStarted();
-        YxzDefaultConnection connection = new YxzDefaultConnection(3, createAddress(address));
+        YxzDefaultConnection connection = new YxzDefaultConnection(2, createAddress(address));
         try {
             connection.setClientID(ConnectionContainer.createClientID());
             connection.init();

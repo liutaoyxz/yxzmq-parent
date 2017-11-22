@@ -50,6 +50,13 @@ public class YxzMessageHandler {
             case CommonConstant.Command.MAIN_REGISTER:
                 handlerMainRegister(bean,client);
                 break;
+            case CommonConstant.Command.SUBSCRIBE:
+                int type = desc.getType();
+                //订阅
+                if (type == CommonConstant.MessageType.TOPIC){
+                    MessageContainer.subscribe(desc.getTitle(),client.parent());
+                }
+                break;
             default:
                 log.debug("handler protocolBean error,command is {}",command);
                 break;
@@ -59,7 +66,9 @@ public class YxzMessageHandler {
 
 
     private static boolean checkBean(ProtocolBean bean){
-        if (bean == null) return false;
+        if (bean == null){
+            return false;
+        }
         return true;
     }
 
@@ -93,7 +102,7 @@ public class YxzMessageHandler {
      * @param desc
      * @param msg
      */
-    private static void handlerMessage(MessageDesc desc,String msg){
+    private static void handlerMessage(MessageDesc desc,String msg) throws IOException {
         int type = desc.getType();
         String title = desc.getTitle();
         boolean result = false;
@@ -132,6 +141,7 @@ public class YxzMessageHandler {
             Group group = new Group(client);
             group.setGroupId(Group.nextGroupId());
             client.handler().addGroup(group);
+            client.setParent(group);
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();
             bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
@@ -169,11 +179,12 @@ public class YxzMessageHandler {
         String groupId = bean.getGroupId();
         SocketChannel channel = client.channel();
         if (StringUtils.isBlank(groupId)){
-            //有问题
+            //有问题 todo
 
         }else {
             //注册
             Group group = client.handler().getGroup(groupId);
+            client.setParent(group);
             group.addActiveClient(client);
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();

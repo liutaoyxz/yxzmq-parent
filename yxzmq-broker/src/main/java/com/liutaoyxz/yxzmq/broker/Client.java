@@ -54,5 +54,7 @@ public interface Client {
 
     ChannelHandler handler();
 
+    void setParent(Group group);
+
 
 }

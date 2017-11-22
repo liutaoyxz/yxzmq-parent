@@ -121,6 +121,11 @@ public class YxzClient implements Client{
     }
 
     @Override
+    public void setParent(Group group) {
+        this.parent = group;
+    }
+
+    @Override
     public String toString() {
         return "YxzClient{" +
                 "clientId='" + clientId + '\'' +

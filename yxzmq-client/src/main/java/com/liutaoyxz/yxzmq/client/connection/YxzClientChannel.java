@@ -1,5 +1,7 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
+import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
+import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
@@ -8,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -136,6 +139,9 @@ public class YxzClientChannel {
     private void handlerBean(ProtocolBean bean){
         int command = bean.getCommand();
         String groupId = bean.getGroupId();
+        MessageDesc desc = null;
+        String text = null;
+        int msgType = 0;
         switch (command){
             case CommonConstant.Command.REGISTER_SUCCESS:
                 if (isAssistChannel){
@@ -148,6 +154,12 @@ public class YxzClientChannel {
                     this.registered = true;
                     this.parent.registerDown(this);
                 }
+                break;
+            case CommonConstant.Command.SEND:
+                text = new String(bean.getDataBytes(), Charset.forName(ReadContainer.DEFAULT_CHARSET));
+                desc = (MessageDesc) ProtostuffUtil.get(bean.getDescBytes(),bean.getDescClass());
+                msgType = desc.getType();
+                this.parent.sendMessageToConsumer(msgType,desc.getTitle(),text);
                 break;
             default:
                 log.debug("handlerBean error,command is {}",command);

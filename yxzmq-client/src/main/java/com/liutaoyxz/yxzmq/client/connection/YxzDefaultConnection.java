@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
 import com.liutaoyxz.yxzmq.client.session.YxzDefaultSession;
+import com.liutaoyxz.yxzmq.client.session.YxzTextMessage;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
@@ -9,8 +10,7 @@ import com.liutaoyxz.yxzmq.io.util.BeanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.JMSException;
-import javax.jms.Session;
+import javax.jms.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -38,6 +38,20 @@ public class YxzDefaultConnection extends AbstractConnection {
     private BlockingQueue<YxzClientChannel> activeChannels;
 
     private YxzClientChannel assistChannel;
+
+    /**
+     * 主题监听器列表
+     */
+    private ConcurrentHashMap<String,CopyOnWriteArrayList<TopicSubscriber>> topicListener;
+
+    private ReentrantLock topicListenerLock = new ReentrantLock();
+
+    /**
+     * 队列监听列表
+     */
+    private ConcurrentHashMap<String,CopyOnWriteArrayList<QueueReceiver>> queueListener;
+
+    private ReentrantLock queueListenerLock = new ReentrantLock();
 
     /**
      * 执行session,具体执行方式在session中
@@ -129,6 +143,8 @@ public class YxzDefaultConnection extends AbstractConnection {
             }
         });
         this.activeChannels = new ArrayBlockingQueue(channelNum);
+        this.topicListener = new ConcurrentHashMap<>();
+        this.queueListener = new ConcurrentHashMap<>();
     }
 
     /**
@@ -336,6 +352,48 @@ public class YxzDefaultConnection extends AbstractConnection {
                     sc.write(buffer);
                 }
             }
+        }
+    }
+
+    public void addTopicSubscriber(TopicSubscriber subscriber){
+        topicListenerLock.lock();
+        try {
+            String topicName = subscriber.getTopic().getTopicName();
+            CopyOnWriteArrayList<TopicSubscriber> list = this.topicListener.get(topicName);
+            if (list == null){
+                list = new CopyOnWriteArrayList<>();
+                list.add(subscriber);
+                this.topicListener.put(topicName,list);
+                return;
+            }
+            list.add(subscriber);
+        }catch (JMSException e){
+            log.debug("addTopicSubscriber error",e);
+        }finally {
+            topicListenerLock.unlock();
+        }
+    }
+
+    /**
+     * 发布消息
+     * @param type
+     * @param title
+     * @param text
+     */
+    void sendMessageToConsumer(int type,String title,String text){
+        try {
+            if (type == CommonConstant.MessageType.TOPIC){
+                //主题
+                CopyOnWriteArrayList<TopicSubscriber> subscribers = this.topicListener.get(title);
+                for (TopicSubscriber s : subscribers){
+                    MessageListener listener = s.getMessageListener();
+                    listener.onMessage(new YxzTextMessage(text));
+                }
+            }else {
+                //队列
+            }
+        }catch (JMSException e){
+            log.debug("sendMessageToConsumer error",e);
         }
 
     }

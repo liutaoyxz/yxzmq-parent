@@ -28,11 +28,6 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
     private Map<SocketChannel,YxzClient> scMap = new ConcurrentHashMap<>();
 
     /**
-     * 未注册到group的连接
-     */
-    private CopyOnWriteArrayList<YxzClient> edenClient = new CopyOnWriteArrayList<>();
-
-    /**
      * groupId 和 Group映射
      */
     private ConcurrentHashMap<String,Group> groupMap = new ConcurrentHashMap<>();
@@ -69,6 +64,10 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
         try {
             removeClient(channel);
             channel.close();
+            client.parent().delActiveClient(client);
+            if (!client.parent().isAlive()){
+                this.groupMap.remove(client.parent().groupId());
+            }
             afterDiscontected(client);
         } catch (IOException e) {
             log.debug("disconnect socketChannel error,SocketChannel is {}", channel);
@@ -106,7 +105,6 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
             Integer clientId = Math.abs(channel.hashCode());
             YxzClient client = new YxzClient(clientId.toString(),channel,address,this);
             scMap.put(channel,client);
-            this.edenClient.add(client);
             return client;
         } catch (IOException e) {
             log.error("get remoteAddress error",e);

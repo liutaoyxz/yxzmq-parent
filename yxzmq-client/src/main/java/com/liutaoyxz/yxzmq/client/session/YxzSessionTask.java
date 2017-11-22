@@ -8,6 +8,7 @@ import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
+import com.liutaoyxz.yxzmq.io.util.BeanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,7 @@ public class YxzSessionTask implements Runnable {
     /**
      * 订阅主题
      */
-    static final int SUBCRISH = 2;
+    static final int SUBSCRIBE = 2;
 
 
     private Topic topic;
@@ -102,11 +103,12 @@ public class YxzSessionTask implements Runnable {
         List<byte[]> result = null;
         Metadata metadata = null;
         ProtocolBean bean = null;
+        MessageDesc desc = null;
         switch (this.type){
             case PUBLISH:
                 result = new ArrayList<>();
                 //发布消息
-                MessageDesc desc = new MessageDesc();
+                desc = new MessageDesc();
                 desc.setType(CommonConstant.MessageType.TOPIC);
                 desc.setTitle(topic.getTopicName());
                 byte[] descBytes = ProtostuffUtil.serializable(desc);
@@ -133,7 +135,15 @@ public class YxzSessionTask implements Runnable {
                 result.add(metadataBytes);
                 result.add(beanBytes);
                 break;
-
+            case SUBSCRIBE:
+                bean = new ProtocolBean();
+                bean.setCommand(CommonConstant.Command.SUBSCRIBE);
+                desc = new MessageDesc();
+                desc.setTitle(topic.getTopicName());
+                desc.setType(CommonConstant.MessageType.TOPIC);
+                metadata = new Metadata();
+                result = BeanUtil.convertBeanToByte(metadata, desc, bean);
+                break;
             default:
                 break;
         }

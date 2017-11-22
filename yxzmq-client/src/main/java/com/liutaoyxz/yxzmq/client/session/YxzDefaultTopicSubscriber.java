@@ -13,8 +13,13 @@ public class YxzDefaultTopicSubscriber extends AbstractMessageConsumer implement
 
     private MessageListener messageListener;
 
-    YxzDefaultTopicSubscriber(Topic topic){
+    private YxzDefaultSession session;
+
+
+
+    YxzDefaultTopicSubscriber(Topic topic,YxzDefaultSession session){
         this.topic = topic;
+        this.session = session;
     }
 
     @Override
@@ -34,6 +39,13 @@ public class YxzDefaultTopicSubscriber extends AbstractMessageConsumer implement
 
     @Override
     public void setMessageListener(MessageListener messageListener) throws JMSException {
+        if (this.messageListener == null){
+            //告诉connection 我要注册监听了,把我放到列表里
+            YxzSessionTask task = new YxzSessionTask(this.session,YxzSessionTask.SUBSCRIBE);
+            task.setTopic(this.topic);
+            this.session.getConnection().addTopicSubscriber(this);
+            this.session.addTask(task);
+        }
         this.messageListener = messageListener;
     }
 }
