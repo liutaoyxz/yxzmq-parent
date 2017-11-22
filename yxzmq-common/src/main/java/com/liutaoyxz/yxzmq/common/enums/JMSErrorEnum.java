@@ -15,7 +15,8 @@ public enum JMSErrorEnum {
     CONNECTION_NOT_INIT("0002","connection not init"),
     CHANNEL_OPEN_ERROR("0003","error when channel open"),
     SESSION_CLOSED("0004","session already closed"),
-    CONNECTION_NOT_START("0005","connection not start")
+    CONNECTION_NOT_START("0005","connection not start"),
+    QUEUE_NOT_DEFINE("0006","queue not define"),
     ;
 
 

@@ -101,7 +101,10 @@ public class YxzDefaultSession extends AbstractSession {
      */
     @Override
     public Queue createQueue(String queueName) throws JMSException {
-        return null;
+        if (StringUtils.isBlank(queueName)){
+            throw new NullPointerException("queueName can not be null");
+        }
+        return new YxzQueue(queueName);
     }
 
     /**
@@ -112,6 +115,9 @@ public class YxzDefaultSession extends AbstractSession {
      */
     @Override
     public Topic createTopic(String topicName) throws JMSException {
+        if (StringUtils.isBlank(topicName)){
+            throw new NullPointerException("topicName can not be null");
+        }
         return new YxzTopic(topicName);
     }
 
@@ -185,7 +191,8 @@ public class YxzDefaultSession extends AbstractSession {
             this.topicConsumers.add(topicSubscriber);
             return topicSubscriber;
         }
-        return null;
+        YxzQueueConsumer consumer = new YxzQueueConsumer((Queue) destination);
+        return consumer;
     }
 
     YxzDefaultConnection getConnection(){
