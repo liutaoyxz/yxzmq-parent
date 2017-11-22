@@ -28,6 +28,7 @@ public abstract class AbstractChannelReader implements ChannelReader {
 
     /**
      *  TODO: 2017/11/15 读的线程,先和每个channel对应生成一个线程,实现协议后优化
+     *  采用了cache的方式,实际使用中 最大的线程量不会超过socketChannel的数量,也就是@{@link Client}的数量
      */
     private ExecutorService executorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 5L,
             TimeUnit.SECONDS, new SynchronousQueue<>(), new ThreadFactory() {
@@ -39,6 +40,12 @@ public abstract class AbstractChannelReader implements ChannelReader {
         }
     });
 
+    /**
+     * channel 的读取方式是  每一个Client中都包含一个ReaderContainer,并且唯一
+     * channel 的读取过程必须是顺序执行的,也就是要保证单线程,这里采用加锁的方式
+     * @see Client
+     * @param client
+     */
     @Override
     public void startRead(final Client client) {
         if (!client.startRead()){
@@ -49,9 +56,10 @@ public abstract class AbstractChannelReader implements ChannelReader {
 
     /**
      * 获取客户端的task 对象
+     * task 在读取结束后一定要调用 stopRead()
+     * @see Client
      * @param client
      * @return
-     * TODO 现在每个客户端的数据处理采用的是单线程,所以目前不存在并发操作
      */
     private Runnable getTask(Client client){
         String id = client.id();

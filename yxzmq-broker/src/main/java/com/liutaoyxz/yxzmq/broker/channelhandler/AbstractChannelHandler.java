@@ -49,6 +49,12 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
         return false;
     }
 
+    /**
+     * 断开连接,需要清理一些映射关系
+     * @s
+     * @param channel
+     * @return
+     */
     @Override
     public boolean disconnect(SocketChannel channel) {
         if (channel == null){
