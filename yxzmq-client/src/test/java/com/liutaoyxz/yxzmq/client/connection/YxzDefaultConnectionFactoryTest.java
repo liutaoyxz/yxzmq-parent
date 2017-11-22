@@ -43,7 +43,7 @@ public class YxzDefaultConnectionFactoryTest {
         Topic topic = session.createTopic("topic");
         MessageProducer producer = session.createProducer(topic);
         long start = System.currentTimeMillis();
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 100; i++) {
             TextMessage textMessage = session.createTextMessage("message-liutao"+i);
             producer.send(textMessage);
         }

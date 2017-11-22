@@ -156,7 +156,6 @@ public class YxzDefaultConnection extends AbstractConnection {
     public void start() throws JMSException {
         lock.lock();
         try {
-            init();
             if (!inited) {
                 throw JMSErrorEnum.CONNECTION_NOT_INIT.exception();
             }
