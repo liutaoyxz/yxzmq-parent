@@ -57,4 +57,11 @@ public enum JMSErrorEnum {
         return new JMSException(reason(),code());
     }
 
+    public JMSException exception(Exception e){
+        JMSException jmsException = new JMSException(reason(), code());
+        jmsException.setLinkedException(e);
+        return jmsException;
+    }
+
+
 }

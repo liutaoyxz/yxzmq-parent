@@ -22,6 +22,21 @@ public interface CommonConstant {
          */
         int SUBSCRIBE = 2;
 
+        /**
+         * 辅助channel注册
+         */
+        int ASSIST_REGISTER = 3;
+
+        /**
+         * 主channel注册
+         */
+        int MAIN_REGISTER = 4;
+
+        /**
+         * 注册成功响应
+         */
+        int REGISTER_SUCCESS = 5;
+
     }
 
     /**

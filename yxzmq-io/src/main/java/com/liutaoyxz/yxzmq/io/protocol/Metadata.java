@@ -6,6 +6,9 @@ package com.liutaoyxz.yxzmq.io.protocol;
  * @author Doug Tao
  */
 public class Metadata {
+
+
+
     /**
      * clientId
      */

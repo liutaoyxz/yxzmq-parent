@@ -1,14 +1,19 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
 import com.liutaoyxz.yxzmq.client.session.YxzDefaultSession;
+import com.liutaoyxz.yxzmq.client.session.YxzTextMessage;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
+import com.liutaoyxz.yxzmq.io.protocol.Metadata;
+import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
+import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
+import com.liutaoyxz.yxzmq.io.util.BeanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.JMSException;
-import javax.jms.Session;
+import javax.jms.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.*;
@@ -28,9 +33,25 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     private CopyOnWriteArrayList<YxzDefaultSession> sessions = new CopyOnWriteArrayList<>();
 
-    private List<SocketChannel> channels = new CopyOnWriteArrayList<>();
+    private List<YxzClientChannel> channels = new CopyOnWriteArrayList<>();
 
-    private BlockingQueue<SocketChannel> activeChannels;
+    private BlockingQueue<YxzClientChannel> activeChannels;
+
+    private YxzClientChannel assistChannel;
+
+    /**
+     * 主题监听器列表
+     */
+    private ConcurrentHashMap<String,CopyOnWriteArrayList<TopicSubscriber>> topicListener;
+
+    private ReentrantLock topicListenerLock = new ReentrantLock();
+
+    /**
+     * 队列监听列表
+     */
+    private ConcurrentHashMap<String,CopyOnWriteArrayList<QueueReceiver>> queueListener;
+
+    private ReentrantLock queueListenerLock = new ReentrantLock();
 
     /**
      * 执行session,具体执行方式在session中
@@ -61,9 +82,20 @@ public class YxzDefaultConnection extends AbstractConnection {
 
     private ReentrantLock lock = new ReentrantLock();
 
-//    private Condition wait = lock.newCondition();
+    /**
+     * broker 端返回的id,通过辅助通道申请的
+     */
+    private String groupId;
 
+    /**
+     * 辅助channel 计数器
+     */
+    private CountDownLatch assistRegisterCountDownLatch = new CountDownLatch(1);
 
+    /**
+     * 主channel 计数器
+     */
+    private CountDownLatch registerCountDownLatch ;
 
     /**
      * 地址
@@ -81,7 +113,6 @@ public class YxzDefaultConnection extends AbstractConnection {
         }
         this.channelNum = channelNum;
         this.address = address;
-
         this.sessionExecutor = new ThreadPoolExecutor(10, Integer.MAX_VALUE, 10L,
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
             @Override
@@ -96,7 +127,7 @@ public class YxzDefaultConnection extends AbstractConnection {
                 return thread;
             }
         });
-
+        this.registerCountDownLatch = new CountDownLatch(channelNum);
         this.connectionExecutor = new ThreadPoolExecutor(channelNum, channelNum, 5L,
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
             @Override
@@ -112,7 +143,8 @@ public class YxzDefaultConnection extends AbstractConnection {
             }
         });
         this.activeChannels = new ArrayBlockingQueue(channelNum);
-
+        this.topicListener = new ConcurrentHashMap<>();
+        this.queueListener = new ConcurrentHashMap<>();
     }
 
     /**
@@ -160,17 +192,27 @@ public class YxzDefaultConnection extends AbstractConnection {
                 throw JMSErrorEnum.CONNECTION_NOT_INIT.exception();
             }
             ConnectionContainer.scMap(clientID, channels);
-            ConnectionContainer.connect(getClientID(), address);
-            activeChannels.addAll(channels);
+
+            this.assistRegister();
+            this.assistRegisterCountDownLatch.await();
+            log.debug("assistRegister success");
+            this.mainRegister();
+            this.registerCountDownLatch.await();
+            log.debug("main register success");
             this.connected = true;
             final String clientID = YxzDefaultConnection.this.getClientID();
             log.debug("connection start,clientID is {}", clientID);
         } catch (IOException e) {
             log.debug("start connection error", e);
-            JMSException jmsException = JMSErrorEnum.CONNECT_ERROR.exception();
-            jmsException.setLinkedException(e);
+            JMSException jmsException = JMSErrorEnum.CONNECT_ERROR.exception(e);
             throw jmsException;
-        } finally {
+        }
+        catch (InterruptedException e) {
+            log.debug("start connection error", e);
+            JMSException jmsException = JMSErrorEnum.CONNECT_ERROR.exception(e);
+            throw jmsException;
+        }
+        finally {
             lock.unlock();
         }
 
@@ -203,10 +245,18 @@ public class YxzDefaultConnection extends AbstractConnection {
                 log.debug("already inited");
                 return;
             }
+            assistChannel = new YxzClientChannel(this,SocketChannel.open(),true);
+            this.channels.add(assistChannel);
+            SocketChannel asc = assistChannel.getChannel();
+            YxzDefaultConnectionFactory.registerSocketChannel(asc);
+            asc.connect(address);
             for (int i = 0; i < channelNum; i++) {
-                SocketChannel sc = SocketChannel.open();
+                YxzClientChannel sc = new YxzClientChannel(this,SocketChannel.open(),false);
+                YxzDefaultConnectionFactory.registerSocketChannel(sc.getChannel());
+                sc.getChannel().connect(address);
                 this.channels.add(sc);
             }
+            YxzDefaultConnectionFactory.startSelect();
         } finally {
             this.inited = true;
             lock.unlock();
@@ -221,11 +271,11 @@ public class YxzDefaultConnection extends AbstractConnection {
         this.clientID = clientID;
     }
 
-    List<SocketChannel> getChannels(){
-        return this.channels;
-    }
-
-    SocketChannel applyChannel(){
+    /**
+     * 申请一个channel,会阻塞
+     * @return
+     */
+    YxzClientChannel applyChannel(){
         try {
             return activeChannels.take();
         } catch (InterruptedException e) {
@@ -234,8 +284,142 @@ public class YxzDefaultConnection extends AbstractConnection {
         return null;
     }
 
-    void returnChannel(SocketChannel socketChannel){
+    /**
+     * 返回一个channel
+     * @param socketChannel
+     */
+    void returnChannel(YxzClientChannel socketChannel){
         this.activeChannels.add(socketChannel);
+    }
+
+    void assistRegisterDown(){
+        this.assistRegisterCountDownLatch.countDown();
+    }
+
+    void registerDown(YxzClientChannel channel){
+        this.registerCountDownLatch.countDown();
+        try {
+            this.activeChannels.put(channel);
+        } catch (InterruptedException e) {
+            log.debug("add activeChannel error",e);
+        }
+    }
+
+    void setGroupId(String groupId){
+        this.groupId = groupId;
+    }
+
+    String groupId(){
+        return this.groupId;
+    }
+
+    void assistRegister() throws IOException {
+        YxzClientChannel assistChannel = this.assistChannel;
+        SocketChannel sc = assistChannel.getChannel();
+        ProtocolBean bean = new ProtocolBean();
+        bean.setCommand(CommonConstant.Command.ASSIST_REGISTER);
+        Metadata metadata = new Metadata();
+        List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
+        for (byte[] b : bytes){
+            ByteBuffer buffer = ByteBuffer.wrap(b);
+            sc.write(buffer);
+            while (buffer.hasRemaining()){
+                sc.write(buffer);
+            }
+        }
+    }
+
+    /**
+     * 主channel 注册
+     * @throws IOException
+     */
+    void mainRegister() throws IOException {
+        for (YxzClientChannel yc : channels){
+            if (yc.isRegistered()){
+                continue;
+            }
+            SocketChannel sc = yc.getChannel();
+            ProtocolBean bean = new ProtocolBean();
+            bean.setGroupId(groupId);
+            bean.setCommand(CommonConstant.Command.MAIN_REGISTER);
+            Metadata metadata = new Metadata();
+            List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
+            for (byte[] b : bytes){
+                ByteBuffer buffer = ByteBuffer.wrap(b);
+                sc.write(buffer);
+                while (buffer.hasRemaining()){
+                    sc.write(buffer);
+                }
+            }
+        }
+    }
+
+    public void addTopicSubscriber(TopicSubscriber subscriber){
+        topicListenerLock.lock();
+        try {
+            String topicName = subscriber.getTopic().getTopicName();
+            CopyOnWriteArrayList<TopicSubscriber> list = this.topicListener.get(topicName);
+            if (list == null){
+                list = new CopyOnWriteArrayList<>();
+                list.add(subscriber);
+                this.topicListener.put(topicName,list);
+                return;
+            }
+            list.add(subscriber);
+        }catch (JMSException e){
+            log.debug("addTopicSubscriber error",e);
+        }finally {
+            topicListenerLock.unlock();
+        }
+    }
+
+    /**
+     * 发布消息
+     * @param type
+     * @param title
+     * @param text
+     */
+    void sendMessageToConsumer(int type,String title,String text){
+        try {
+            if (type == CommonConstant.MessageType.TOPIC){
+                //主题
+                CopyOnWriteArrayList<TopicSubscriber> subscribers = this.topicListener.get(title);
+                for (TopicSubscriber s : subscribers){
+                    MessageListener listener = s.getMessageListener();
+                    listener.onMessage(new YxzTextMessage(text));
+                }
+            }else {
+                //队列
+            }
+        }catch (JMSException e){
+            log.debug("sendMessageToConsumer error",e);
+        }
+    }
+
+    void disconnected(YxzClientChannel channel) throws IOException {
+        if (channel == null){
+            return ;
+        }
+        SocketChannel sc = channel.getChannel();
+        if (sc == null){
+            return;
+        }
+        if (!sc.isOpen()){
+            ConnectionContainer.removeClientChannel(channel);
+            return;
+        }
+        if (!sc.isConnected()){
+            sc.close();
+        }
+        sc.close();
+        ConnectionContainer.removeClientChannel(channel);
+        if (channel.isAssistChannel()){
+            //辅助channel
+            log.debug("assist channel disconnect");
+        }else {
+            this.activeChannels.remove(channel);
+            this.channels.remove(channel);
+        }
     }
 
 }

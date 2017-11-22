@@ -1,7 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
 import com.liutaoyxz.yxzmq.broker.Client;
-import com.liutaoyxz.yxzmq.broker.YxzClient;
+import com.liutaoyxz.yxzmq.broker.Group;
 
 import java.nio.channels.SocketChannel;
 
@@ -34,5 +34,13 @@ public interface ChannelHandler {
      * @return 如果用户还没有添加到客户端列表 则返回null, 否则返回实例
      */
     Client client(SocketChannel channel);
+
+    /**
+     * 保存group 到列表
+     * @param group
+     */
+    void addGroup(Group group);
+
+    Group getGroup(String groupId);
 
 }

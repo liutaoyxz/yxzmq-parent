@@ -7,10 +7,11 @@ import org.slf4j.LoggerFactory;
 import javax.jms.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -34,10 +35,31 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
 
     public static final Logger log = LoggerFactory.getLogger(YxzDefaultConnectionFactory.class);
 
+    private static ExecutorService selectExecutor = new ThreadPoolExecutor(1, 1, 5L,
+            TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName("factory-task");
+            return thread;
+        }
+    });
+
+    private static Selector selector;
+
+    private static FactoryTask task;
+
     /**
      * 定时任务,心跳测试,暂时没用,只是保证程序不退出
      */
-    private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
+    private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName("scheduled-task");
+            return thread;
+        }
+    });
 
     private final CopyOnWriteArrayList<YxzDefaultConnection> connections = new CopyOnWriteArrayList<>();
 
@@ -62,16 +84,29 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
         if (!started){
             startLock.lock();
             try {
+                selector = Selector.open();
+                task = new FactoryTask(selector);
                 executor.schedule(new Runnable() {
                     @Override
                     public void run() {
                         log.debug("factory started");
                     }
                 },0L, TimeUnit.SECONDS);
+            }catch (IOException e){
+                e.printStackTrace();
             }finally {
                 startLock.unlock();
             }
         }
+    }
+
+    static void startSelect(){
+        selectExecutor.execute(task);
+        task.start();
+    }
+
+    static void stopSelect(){
+        task.stop();
     }
 
     /**
@@ -84,7 +119,7 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
     @Override
     public Connection createConnection(String address, String str) throws JMSException {
         checkStarted();
-        YxzDefaultConnection connection = new YxzDefaultConnection(3, createAddress(address));
+        YxzDefaultConnection connection = new YxzDefaultConnection(2, createAddress(address));
         try {
             connection.setClientID(ConnectionContainer.createClientID());
             connection.init();
@@ -103,6 +138,17 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
         String ip = ss[0];
         int port = Integer.valueOf(ss[1]);
         return new InetSocketAddress(ip,port);
+    }
+
+    /**
+     * 把socketChannel交给selector管理
+     * @param channel
+     * @throws IOException
+     */
+    static void registerSocketChannel(SocketChannel channel) throws IOException {
+        channel.configureBlocking(false);
+        channel.register(selector, SelectionKey.OP_CONNECT, ByteBuffer.allocate(128));
+        log.debug("after register");
     }
 
     @Override

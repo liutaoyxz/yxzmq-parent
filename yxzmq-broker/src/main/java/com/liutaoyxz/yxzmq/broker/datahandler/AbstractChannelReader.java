@@ -3,11 +3,10 @@ package com.liutaoyxz.yxzmq.broker.datahandler;
 import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
 import com.liutaoyxz.yxzmq.broker.datahandler.analyser.DefaultDataAnalyner;
+import com.sun.xml.internal.bind.v2.TODO;
 import org.slf4j.Logger;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * @author Doug Tao
@@ -27,8 +26,18 @@ public abstract class AbstractChannelReader implements ChannelReader {
         this.log = log;
     }
 
-    // TODO: 2017/11/15 读的线程,先和每个channel对应生成一个线程,实现协议后优化
-    private ExecutorService executorService = Executors.newCachedThreadPool();
+    /**
+     *  TODO: 2017/11/15 读的线程,先和每个channel对应生成一个线程,实现协议后优化
+     */
+    private ExecutorService executorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 5L,
+            TimeUnit.SECONDS, new SynchronousQueue<>(), new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName("read-thread");
+            return thread;
+        }
+    });
 
     @Override
     public void startRead(final Client client) {

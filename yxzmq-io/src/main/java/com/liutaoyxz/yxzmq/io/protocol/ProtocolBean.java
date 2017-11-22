@@ -11,6 +11,10 @@ public class ProtocolBean {
      * 命令
      */
     private int command;
+    /**
+     * connection 的groupId
+     */
+    private String groupId;
 
     /**
      * 消息描述类 class name
@@ -72,10 +76,19 @@ public class ProtocolBean {
         this.dataBytes = dataBytes;
     }
 
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
     @Override
     public String toString() {
         return "ProtocolBean{" +
                 "command=" + command +
+                ", groupId='" + groupId + '\'' +
                 ", descClass='" + descClass + '\'' +
                 ", descBytes=" + Arrays.toString(descBytes) +
                 ", dataClass='" + dataClass + '\'' +

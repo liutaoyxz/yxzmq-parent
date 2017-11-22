@@ -1,18 +1,26 @@
 package com.liutaoyxz.yxzmq.broker.messagehandler;
 
+import com.liutaoyxz.yxzmq.broker.Client;
+import com.liutaoyxz.yxzmq.broker.Group;
 import com.liutaoyxz.yxzmq.broker.storage.MessageContainer;
 import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
+import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
+import com.liutaoyxz.yxzmq.io.util.BeanUtil;
 import com.liutaoyxz.yxzmq.io.wrap.QueueMessage;
 import com.liutaoyxz.yxzmq.io.wrap.TopicMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.List;
 
 /**
  * @author Doug Tao
@@ -23,7 +31,7 @@ public class YxzMessageHandler {
 
     private static final Logger log = LoggerFactory.getLogger(YxzMessageHandler.class);
 
-    public static void handlerProtocolBean(ProtocolBean bean){     //package-private
+    public static void handlerProtocolBean(ProtocolBean bean, Client client) throws IOException {     //package-private
 
         if (!checkBean(bean)){
             return;
@@ -36,6 +44,19 @@ public class YxzMessageHandler {
                 //发送过来的消息
                 handlerMessage(desc,msg);
                 break;
+            case CommonConstant.Command.ASSIST_REGISTER:
+                handlerAssistRegister(bean,client);
+                break;
+            case CommonConstant.Command.MAIN_REGISTER:
+                handlerMainRegister(bean,client);
+                break;
+            case CommonConstant.Command.SUBSCRIBE:
+                int type = desc.getType();
+                //订阅
+                if (type == CommonConstant.MessageType.TOPIC){
+                    MessageContainer.subscribe(desc.getTitle(),client.parent());
+                }
+                break;
             default:
                 log.debug("handler protocolBean error,command is {}",command);
                 break;
@@ -45,7 +66,9 @@ public class YxzMessageHandler {
 
 
     private static boolean checkBean(ProtocolBean bean){
-        if (bean == null) return false;
+        if (bean == null){
+            return false;
+        }
         return true;
     }
 
@@ -79,7 +102,7 @@ public class YxzMessageHandler {
      * @param desc
      * @param msg
      */
-    private static void handlerMessage(MessageDesc desc,String msg){
+    private static void handlerMessage(MessageDesc desc,String msg) throws IOException {
         int type = desc.getType();
         String title = desc.getTitle();
         boolean result = false;
@@ -103,8 +126,78 @@ public class YxzMessageHandler {
                 log.debug("handler message error,message title is {}",title);
                 break;
         }
-
-
     }
 
+    /**
+     * 客户端注册channel 注册,需要写回去groupId
+     * @param bean
+     * @param client
+     */
+    private static void handlerAssistRegister(ProtocolBean bean,Client client) throws IOException {
+        String groupId = bean.getGroupId();
+        SocketChannel channel = client.channel();
+        if (StringUtils.isBlank(groupId)){
+            //第一次注册
+            Group group = new Group(client);
+            group.setGroupId(Group.nextGroupId());
+            client.handler().addGroup(group);
+            client.setParent(group);
+            Metadata metadata = new Metadata();
+            bean  = new ProtocolBean();
+            bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
+            bean.setGroupId(group.groupId());
+            List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
+            for (byte[] b:bytes){
+                ByteBuffer buffer = ByteBuffer.wrap(b);
+                channel.write(buffer);
+                while (buffer.hasRemaining()){
+                    channel.write(buffer);
+                }
+            }
+
+        }else {
+            //不是第一次,删掉之前的,保存现在的
+            Group group = client.handler().getGroup(groupId);
+            group.setGroupId(Group.nextGroupId());
+            group.setAssistClient(client);
+            Metadata metadata = new Metadata();
+            bean  = new ProtocolBean();
+            bean.setGroupId(group.groupId());
+            bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
+            List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
+            for (byte[] b:bytes){
+                ByteBuffer buffer = ByteBuffer.wrap(b);
+                channel.write(buffer);
+                while (buffer.hasRemaining()){
+                    channel.write(buffer);
+                }
+            }
+        }
+    }
+
+    private static void handlerMainRegister(ProtocolBean bean,Client client) throws IOException {
+        String groupId = bean.getGroupId();
+        SocketChannel channel = client.channel();
+        if (StringUtils.isBlank(groupId)){
+            //有问题 todo
+
+        }else {
+            //注册
+            Group group = client.handler().getGroup(groupId);
+            client.setParent(group);
+            group.addActiveClient(client);
+            Metadata metadata = new Metadata();
+            bean  = new ProtocolBean();
+            bean.setGroupId(groupId);
+            bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
+            List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
+            for (byte[] b:bytes){
+                ByteBuffer buffer = ByteBuffer.wrap(b);
+                channel.write(buffer);
+                while (buffer.hasRemaining()){
+                    channel.write(buffer);
+                }
+            }
+        }
+    }
 }

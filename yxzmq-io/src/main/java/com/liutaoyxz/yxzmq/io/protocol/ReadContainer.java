@@ -99,13 +99,6 @@ public class ReadContainer {
                         }
                         break;
                     }
-//                    //已经读满
-//                    ProtocolBean bean = ProtostuffUtil.get(beanBytes,ProtocolBean.class);
-//                    log.debug("read a protocolBean {}",bean);
-//                    beanQueue.add(bean);
-//                    beanBytesReadPosition = 0;
-//                    this.stage = Stage.READ_LENGHT;
-//                    break;
                 default:
                     log.error("read error,stage is {}",stage);
                     break;

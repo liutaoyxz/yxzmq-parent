@@ -13,7 +13,7 @@ public class YxzTextMessage extends AbstratMessage implements TextMessage{
 
     private String text;
 
-    YxzTextMessage(String text){
+    public YxzTextMessage(String text){
         try {
             this.setJMSTimestamp(System.currentTimeMillis());
         } catch (JMSException e) {

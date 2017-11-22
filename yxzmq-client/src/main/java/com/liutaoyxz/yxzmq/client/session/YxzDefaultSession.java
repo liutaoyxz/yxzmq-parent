@@ -181,7 +181,7 @@ public class YxzDefaultSession extends AbstractSession {
          * todo queue 暂时不做
          */
         if (destination instanceof Topic){
-            YxzDefaultTopicSubscriber topicSubscriber = new YxzDefaultTopicSubscriber((Topic) destination);
+            YxzDefaultTopicSubscriber topicSubscriber = new YxzDefaultTopicSubscriber((Topic) destination,this);
             this.topicConsumers.add(topicSubscriber);
             return topicSubscriber;
         }

@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
 import com.liutaoyxz.yxzmq.broker.Client;
+import com.liutaoyxz.yxzmq.broker.Group;
 import com.liutaoyxz.yxzmq.broker.YxzClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author Doug Tao
@@ -24,6 +26,11 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
     protected Logger log;
 
     private Map<SocketChannel,YxzClient> scMap = new ConcurrentHashMap<>();
+
+    /**
+     * groupId 和 Group映射
+     */
+    private ConcurrentHashMap<String,Group> groupMap = new ConcurrentHashMap<>();
 
     protected AbstractChannelHandler(Logger log) {
         this.log = log;
@@ -57,6 +64,10 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
         try {
             removeClient(channel);
             channel.close();
+            client.parent().delActiveClient(client);
+            if (!client.parent().isAlive()){
+                this.groupMap.remove(client.parent().groupId());
+            }
             afterDiscontected(client);
         } catch (IOException e) {
             log.debug("disconnect socketChannel error,SocketChannel is {}", channel);
@@ -82,22 +93,22 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
             SocketAddress remoteAddress = channel.getRemoteAddress();
             if (remoteAddress == null){
                 log.debug("add client,but remoteAddress is null");
-                YxzClient rmClient = scMap.remove(channel);
+                scMap.remove(channel);
                 return null;
             }
             String address = remoteAddress.toString();
             if (StringUtils.isBlank(address)){
                 log.debug("add client,but address is blank");
-                YxzClient rmClient = scMap.remove(channel);
+                scMap.remove(channel);
                 return null;
             }
             Integer clientId = Math.abs(channel.hashCode());
-            YxzClient client = new YxzClient(clientId.toString(),channel,address);
+            YxzClient client = new YxzClient(clientId.toString(),channel,address,this);
             scMap.put(channel,client);
             return client;
         } catch (IOException e) {
             log.error("get remoteAddress error",e);
-            YxzClient rmClient = scMap.remove(channel);
+            scMap.remove(channel);
             return null;
         }
     }
@@ -131,4 +142,13 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
         }
     }
 
+    @Override
+    public void addGroup(Group group) {
+        this.groupMap.put(group.groupId(),group);
+    }
+
+    @Override
+    public Group getGroup(String groupId) {
+        return this.groupMap.get(groupId);
+    }
 }
