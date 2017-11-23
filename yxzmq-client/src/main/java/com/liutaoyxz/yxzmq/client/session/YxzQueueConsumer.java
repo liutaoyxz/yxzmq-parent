@@ -15,8 +15,11 @@ public class YxzQueueConsumer implements QueueReceiver {
 
     private MessageListener messageListener;
 
-    YxzQueueConsumer(Queue queue){
+    private YxzDefaultSession session;
+
+    YxzQueueConsumer(Queue queue,YxzDefaultSession session){
         this.queue = queue;
+        this.session = session;
     }
 
     @Override
@@ -36,6 +39,13 @@ public class YxzQueueConsumer implements QueueReceiver {
 
     @Override
     public void setMessageListener(MessageListener messageListener) throws JMSException {
+        if (this.messageListener == null){
+            //没有注册过监听,告诉broker我要监听
+            YxzSessionTask task = new YxzSessionTask(this.session,YxzSessionTask.LISTEN_QUEUE);
+            task.setQueue(this.queue);
+            this.session.addTask(task);
+            this.session.getConnection().addQueueConsumer(this);
+        }
         this.messageListener = messageListener;
     }
 

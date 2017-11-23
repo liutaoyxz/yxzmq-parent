@@ -39,6 +39,13 @@ public class YxzSessionTask implements Runnable {
      */
     static final int SUBSCRIBE = 2;
 
+    /**
+     * 监听queue
+     */
+    static final int LISTEN_QUEUE = 3;
+
+    static final int QUEUE_SEND = 4;
+
 
     private Topic topic;
 
@@ -104,6 +111,7 @@ public class YxzSessionTask implements Runnable {
         Metadata metadata = null;
         ProtocolBean bean = null;
         MessageDesc desc = null;
+        String text = null;
         switch (this.type){
             case PUBLISH:
                 result = new ArrayList<>();
@@ -117,9 +125,8 @@ public class YxzSessionTask implements Runnable {
                 bean.setDescBytes(descBytes);
                 bean.setDescClass(MessageDesc.class.getName());
 
-                String text = message.getText();
-                byte[] textBytes = text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET));
-                bean.setDataBytes(textBytes);
+                text = message.getText();
+                bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
                 bean.setCommand(CommonConstant.Command.SEND);
                 byte[] beanBytes = ProtostuffUtil.serializable(bean);
 
@@ -141,6 +148,28 @@ public class YxzSessionTask implements Runnable {
                 desc = new MessageDesc();
                 desc.setTitle(topic.getTopicName());
                 desc.setType(CommonConstant.MessageType.TOPIC);
+                metadata = new Metadata();
+                result = BeanUtil.convertBeanToByte(metadata, desc, bean);
+                break;
+
+            case LISTEN_QUEUE:
+                bean = new ProtocolBean();
+                bean.setCommand(CommonConstant.Command.QUEUE_LISTEN);
+                desc = new MessageDesc();
+                desc.setTitle(queue.getQueueName());
+                desc.setType(CommonConstant.MessageType.QUEUE);
+                metadata = new Metadata();
+                result = BeanUtil.convertBeanToByte(metadata, desc, bean);
+                break;
+
+            case QUEUE_SEND:
+                bean = new ProtocolBean();
+                bean.setCommand(CommonConstant.Command.SEND);
+                text = message.getText();
+                bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
+                desc = new MessageDesc();
+                desc.setTitle(queue.getQueueName());
+                desc.setType(CommonConstant.MessageType.QUEUE);
                 metadata = new Metadata();
                 result = BeanUtil.convertBeanToByte(metadata, desc, bean);
                 break;

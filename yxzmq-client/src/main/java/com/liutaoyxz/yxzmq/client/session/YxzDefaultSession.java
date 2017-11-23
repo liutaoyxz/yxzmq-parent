@@ -164,7 +164,8 @@ public class YxzDefaultSession extends AbstractSession {
             YxzDefaultTopicPublisher publisher = new YxzDefaultTopicPublisher((Topic) destination,this);
             return publisher;
         }
-        return null;
+        YxzDefaultQueueSender sender = new YxzDefaultQueueSender(this,(Queue)destination);
+        return sender;
     }
 
 
@@ -191,7 +192,7 @@ public class YxzDefaultSession extends AbstractSession {
             this.topicConsumers.add(topicSubscriber);
             return topicSubscriber;
         }
-        YxzQueueConsumer consumer = new YxzQueueConsumer((Queue) destination);
+        YxzQueueConsumer consumer = new YxzQueueConsumer((Queue) destination,this);
         return consumer;
     }
 

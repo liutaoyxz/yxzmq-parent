@@ -20,11 +20,10 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Timer;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -48,8 +47,44 @@ public class MessageContainer {
 
     /**
      * 点对点模式,消息队列
+     * queueName 和 queueMessage 对应的映射
      */
-    private static final ConcurrentHashMap<String,BlockingQueue<QueueMessage>> PP_HOUSE  = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,BlockingDeque<QueueMessage>> PP_HOUSE  = new ConcurrentHashMap<>();
+
+    /**
+     * queueName 和group 对应的映射
+     */
+    private static final ConcurrentHashMap<String,CopyOnWriteArrayList<Group>> QNAME_GROUP = new ConcurrentHashMap<>();
+
+    /**
+     * queueName 和 condition 映射
+     */
+    private static final ConcurrentHashMap<String,Condition> QNAME_CONDITION = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String,ReentrantLock> QNAME_LOCK = new ConcurrentHashMap<>();
+
+    /**
+     * 队列是否取消
+     */
+    public static final ConcurrentHashMap<String,AtomicBoolean> QNAME_CANCEL = new ConcurrentHashMap<>();
+
+    /**
+     * queue 操作的lock
+     */
+    public static ReentrantLock queueLock = new ReentrantLock();
+
+    /**
+     * queue 监听线程池,每一个主题的queue会对应一个线程,线程会在获取queue的过程中阻塞
+     */
+    private static final ExecutorService QUEUE_TASK = new ThreadPoolExecutor(10, Integer.MAX_VALUE, 5L, TimeUnit.SECONDS,
+            new SynchronousQueue<>(), new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName("queue_listen_task");
+            return thread;
+        }
+    });
 
     private static final Logger log = LoggerFactory.getLogger(MessageContainer.class);
 
@@ -146,9 +181,65 @@ public class MessageContainer {
         }finally {
             topicLock.unlock();
         }
+    }
 
+    /**
+     * 监听queue
+     * @param queueName
+     * @param group
+     */
+    public static void listenQueue(String queueName,Group group){
+        checkQueue(queueName);
+        CopyOnWriteArrayList<Group> groups = QNAME_GROUP.get(queueName);
+        groups.add(group);
+        Condition c = QNAME_CONDITION.get(queueName);
+        ReentrantLock lock = QNAME_LOCK.get(queueName);
+        lock.lock();
+        try {
+            c.signal();
+        }finally {
+            lock.unlock();
+        }
+    }
 
+    private static void checkQueue(String queueName){
+        queueLock.lock();
+        try {
+            BlockingDeque<QueueMessage> messages = PP_HOUSE.get(queueName);
+            if (messages == null){
+                messages = new LinkedBlockingDeque<>();
+                PP_HOUSE.put(queueName,messages);
+                CopyOnWriteArrayList groups = new CopyOnWriteArrayList<>();
+                QNAME_GROUP.put(queueName,groups);
+                AtomicBoolean cancel = new AtomicBoolean(false);
+                QNAME_CANCEL.put(queueName,cancel);
+                QueueListenTask task = new QueueListenTask(messages,groups,cancel);
+                QUEUE_TASK.execute(task);
 
+                Condition condition = task.getCondition();
+                QNAME_CONDITION.put(queueName,condition);
+
+                ReentrantLock lock = task.getLock();
+                QNAME_LOCK.put(queueName,lock);
+
+            }
+        }finally {
+            queueLock.unlock();
+        }
+
+    }
+
+    public static List<Group> getGroups(String queueName){
+        return QNAME_GROUP.get(queueName);
+    }
+
+    public static QueueMessage takeQueueMessage(String queueName){
+        try {
+            return PP_HOUSE.get(queueName).take();
+        } catch (InterruptedException e) {
+            log.debug("takeQueueMessage error",e);
+        }
+        return null;
     }
 
 
@@ -160,7 +251,7 @@ public class MessageContainer {
      */
     public static boolean save(String title,QueueMessage message){
         checkTitle(title);
-        BlockingQueue<QueueMessage> queue = PP_HOUSE.get(title);
+        BlockingDeque<QueueMessage> queue = PP_HOUSE.get(title);
         if (queue == null){
             queue = new LinkedBlockingDeque<>();
             PP_HOUSE.putIfAbsent(title,queue);

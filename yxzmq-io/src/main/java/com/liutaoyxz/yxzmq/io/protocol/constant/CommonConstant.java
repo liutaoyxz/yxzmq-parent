@@ -37,6 +37,11 @@ public interface CommonConstant {
          */
         int REGISTER_SUCCESS = 5;
 
+        /**
+         * 监听queue
+         */
+        int QUEUE_LISTEN = 6;
+
     }
 
     /**

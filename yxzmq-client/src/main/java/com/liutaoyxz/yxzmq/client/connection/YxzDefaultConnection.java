@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
 import com.liutaoyxz.yxzmq.client.session.YxzDefaultSession;
+import com.liutaoyxz.yxzmq.client.session.YxzQueueConsumer;
 import com.liutaoyxz.yxzmq.client.session.YxzTextMessage;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
@@ -49,7 +50,7 @@ public class YxzDefaultConnection extends AbstractConnection {
     /**
      * 队列监听列表
      */
-    private ConcurrentHashMap<String,CopyOnWriteArrayList<QueueReceiver>> queueListener;
+    private ConcurrentHashMap<String,LinkedBlockingQueue<YxzQueueConsumer>> queueListener;
 
     private ReentrantLock queueListenerLock = new ReentrantLock();
 
@@ -354,6 +355,10 @@ public class YxzDefaultConnection extends AbstractConnection {
         }
     }
 
+    /**
+     * 添加一个订阅者
+     * @param subscriber
+     */
     public void addTopicSubscriber(TopicSubscriber subscriber){
         topicListenerLock.lock();
         try {
@@ -373,6 +378,29 @@ public class YxzDefaultConnection extends AbstractConnection {
         }
     }
 
+
+    /**
+     * 添加一个queue 消费者
+     */
+    public void addQueueConsumer(YxzQueueConsumer consumer){
+        queueListenerLock.lock();
+        try {
+            String queueName = consumer.getQueue().getQueueName();
+            LinkedBlockingQueue<YxzQueueConsumer> list = this.queueListener.get(queueName);
+            if (list == null){
+                list = new LinkedBlockingQueue<>();
+                list.add(consumer);
+                this.queueListener.put(queueName,list);
+                return;
+            }
+            list.add(consumer);
+        } catch (JMSException e) {
+            log.debug("addQueueConsumer error",e);
+        } finally {
+            queueListenerLock.unlock();
+        }
+    }
+
     /**
      * 发布消息
      * @param type
@@ -389,9 +417,16 @@ public class YxzDefaultConnection extends AbstractConnection {
                     listener.onMessage(new YxzTextMessage(text));
                 }
             }else {
-                //队列
+                //队列 TODO 这里有可能已经没有消费者了,暂时先不处理
+                LinkedBlockingQueue<YxzQueueConsumer> consumers = this.queueListener.get(title);
+                YxzQueueConsumer consumer = consumers.take();
+                MessageListener listener = consumer.getMessageListener();
+                listener.onMessage(new YxzTextMessage(text));
+                consumers.add(consumer);
             }
         }catch (JMSException e){
+            log.debug("sendMessageToConsumer error",e);
+        } catch (InterruptedException e) {
             log.debug("sendMessageToConsumer error",e);
         }
     }

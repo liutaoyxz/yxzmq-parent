@@ -57,6 +57,10 @@ public class YxzMessageHandler {
                     MessageContainer.subscribe(desc.getTitle(),client.parent());
                 }
                 break;
+
+            case CommonConstant.Command.QUEUE_LISTEN:
+                MessageContainer.listenQueue(desc.getTitle(),client.parent());
+                break;
             default:
                 log.debug("handler protocolBean error,command is {}",command);
                 break;
