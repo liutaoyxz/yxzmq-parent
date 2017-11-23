@@ -14,7 +14,7 @@ public class QueueConsumerTest {
         Connection connection = factory.createConnection();
         connection.start();
         Session session = connection.createSession();
-        Queue queue = session.createQueue("queue");
+        Queue queue = session.createQueue("queue1");
         MessageConsumer consumer = session.createConsumer(queue);
         consumer.setMessageListener(new MessageListener() {
             @Override

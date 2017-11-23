@@ -13,7 +13,7 @@ public class QueueProducerTest {
         Connection connection = factory.createConnection();
         connection.start();
         Session session = connection.createSession();
-        Queue queue = session.createQueue("queue");
+        Queue queue = session.createQueue("queue1");
         MessageProducer producer = session.createProducer(queue);
         long start = System.currentTimeMillis();
         for (int i = 0; i < 1000; i++) {

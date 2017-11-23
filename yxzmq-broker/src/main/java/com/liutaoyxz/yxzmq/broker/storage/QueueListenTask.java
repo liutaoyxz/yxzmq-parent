@@ -59,12 +59,16 @@ public class QueueListenTask implements Runnable {
                     condition.await();
                     continue;
                 }
+                grouploop:
                 for (Group g : groups) {
                     QueueMessage message = messages.take();
                     Client client = g.applyClient();
                     if (client == null){
-                        groups.remove(g);
+                        if (!g.isAlive()){
+                            groups.remove(g);
+                        }
                         messages.addLast(message);
+                        continue grouploop;
                     }else {
                         SocketChannel channel = client.channel();
                         String text = message.getText();

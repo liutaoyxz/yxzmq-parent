@@ -127,7 +127,7 @@ public class MessageContainer {
                             channel.write(buffer);
                         }
                     }
-                }else {
+                }else if(!g.isAlive()){
                     groups.remove(g);
                 }
             }finally {
