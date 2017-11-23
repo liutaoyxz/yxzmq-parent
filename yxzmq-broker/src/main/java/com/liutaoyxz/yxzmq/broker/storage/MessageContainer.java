@@ -127,6 +127,8 @@ public class MessageContainer {
                             channel.write(buffer);
                         }
                     }
+                }else {
+                    groups.remove(g);
                 }
             }finally {
                 g.returnClient(client);
@@ -251,12 +253,8 @@ public class MessageContainer {
      */
     public static boolean save(String title,QueueMessage message){
         checkTitle(title);
+        checkQueue(title);
         BlockingDeque<QueueMessage> queue = PP_HOUSE.get(title);
-        if (queue == null){
-            queue = new LinkedBlockingDeque<>();
-            PP_HOUSE.putIfAbsent(title,queue);
-            queue = PP_HOUSE.get(title);
-        }
         try {
             queue.put(message);
         } catch (InterruptedException e) {

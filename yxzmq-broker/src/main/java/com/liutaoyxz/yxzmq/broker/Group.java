@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -73,11 +74,14 @@ public class Group {
     }
 
     public Client applyClient(){
+        if (!alive){
+            return null;
+        }
         try {
             if (clientNum.get() == 0){
                 return null;
             }
-            return clients.take();
+            return clients.poll(100L, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             log.debug("applyClient error",e);
         }

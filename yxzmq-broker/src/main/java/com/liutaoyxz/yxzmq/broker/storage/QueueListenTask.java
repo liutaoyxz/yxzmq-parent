@@ -62,29 +62,35 @@ public class QueueListenTask implements Runnable {
                 for (Group g : groups) {
                     QueueMessage message = messages.take();
                     Client client = g.applyClient();
-                    SocketChannel channel = client.channel();
-                    String text = message.getText();
-                    String queueName = message.getDesc().getTitle();
-                    ProtocolBean bean = new ProtocolBean();
-                    bean.setCommand(CommonConstant.Command.SEND);
-                    bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
-                    MessageDesc desc = new MessageDesc();
-                    desc.setType(CommonConstant.MessageType.QUEUE);
-                    desc.setTitle(queueName);
-                    Metadata metadata = new Metadata();
-                    List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
-                    for (byte[] b : bytes) {
-                        ByteBuffer buffer = ByteBuffer.wrap(b);
-                        while (buffer.hasRemaining()) {
-                            try {
-                                channel.write(buffer);
-                            } catch (IOException e) {
-                                log.debug("channel cancel", e);
-                                g.delActiveClient(client);
+                    if (client == null){
+                        groups.remove(g);
+                        messages.addLast(message);
+                    }else {
+                        SocketChannel channel = client.channel();
+                        String text = message.getText();
+                        String queueName = message.getDesc().getTitle();
+                        ProtocolBean bean = new ProtocolBean();
+                        bean.setCommand(CommonConstant.Command.SEND);
+                        bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
+                        MessageDesc desc = new MessageDesc();
+                        desc.setType(CommonConstant.MessageType.QUEUE);
+                        desc.setTitle(queueName);
+                        Metadata metadata = new Metadata();
+                        List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
+                        for (byte[] b : bytes) {
+                            ByteBuffer buffer = ByteBuffer.wrap(b);
+                            while (buffer.hasRemaining()) {
+                                try {
+                                    channel.write(buffer);
+                                } catch (IOException e) {
+                                    log.debug("channel cancel", e);
+                                    g.delActiveClient(client);
+                                }
                             }
                         }
+                        g.returnClient(client);
                     }
-                    g.returnClient(client);
+
                 }
             } catch (InterruptedException e) {
                 log.debug("queue task error", e);
