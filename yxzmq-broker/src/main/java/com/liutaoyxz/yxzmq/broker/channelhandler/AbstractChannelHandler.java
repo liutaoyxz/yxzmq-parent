@@ -11,7 +11,6 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author Doug Tao
@@ -108,8 +107,8 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
                 scMap.remove(channel);
                 return null;
             }
-            Integer clientId = Math.abs(channel.hashCode());
-            YxzClient client = new YxzClient(clientId.toString(),channel,address,this);
+            String clientId = YxzClient.nextClientId();
+            YxzClient client = new YxzClient(clientId,channel,address,this);
             scMap.put(channel,client);
             return client;
         } catch (IOException e) {

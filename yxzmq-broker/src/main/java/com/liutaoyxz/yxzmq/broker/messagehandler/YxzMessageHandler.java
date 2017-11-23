@@ -32,7 +32,6 @@ public class YxzMessageHandler {
     private static final Logger log = LoggerFactory.getLogger(YxzMessageHandler.class);
 
     public static void handlerProtocolBean(ProtocolBean bean, Client client) throws IOException {     //package-private
-
         if (!checkBean(bean)){
             return;
         }
@@ -65,6 +64,7 @@ public class YxzMessageHandler {
                 log.debug("handler protocolBean error,command is {}",command);
                 break;
         }
+
 
     }
 
@@ -146,6 +146,7 @@ public class YxzMessageHandler {
             group.setGroupId(Group.nextGroupId());
             client.handler().addGroup(group);
             client.setParent(group);
+            client.setIsMainChannel(false);
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();
             bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
@@ -164,6 +165,7 @@ public class YxzMessageHandler {
             Group group = client.handler().getGroup(groupId);
             group.setGroupId(Group.nextGroupId());
             group.setAssistClient(client);
+            client.setIsMainChannel(false);
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();
             bean.setGroupId(group.groupId());
@@ -189,6 +191,7 @@ public class YxzMessageHandler {
             //注册
             Group group = client.handler().getGroup(groupId);
             client.setParent(group);
+            client.setIsMainChannel(true);
             group.addActiveClient(client);
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();

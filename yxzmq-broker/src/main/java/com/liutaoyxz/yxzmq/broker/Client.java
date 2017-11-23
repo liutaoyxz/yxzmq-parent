@@ -1,7 +1,6 @@
 package com.liutaoyxz.yxzmq.broker;
 
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
-import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 
 import java.nio.ByteBuffer;
@@ -56,5 +55,6 @@ public interface Client {
 
     void setParent(Group group);
 
+    void setIsMainChannel(boolean isMainChannel);
 
 }

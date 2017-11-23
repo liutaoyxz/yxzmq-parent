@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by liutao on 2017/11/16.
@@ -24,8 +23,6 @@ public class DefaultDataAnalyner implements Runnable {
 
     private ChannelHandler handler;
 
-    private AtomicInteger readCount = new AtomicInteger(0);
-
     public DefaultDataAnalyner(Client client, ChannelHandler handler) {
         this.client = client;
         this.handler = handler;
@@ -33,13 +30,9 @@ public class DefaultDataAnalyner implements Runnable {
 
     @Override
     public void run() {
-
-        Thread.currentThread().setName(client.id() + "-" + readCount.incrementAndGet());
         try {
             SocketChannel socketChannel = client.channel();
             ByteBuffer buffer = ByteBuffer.allocate(128);
-
-            // TODO: 2017/11/15 read 时抛出IOException 初步判断为连接已经中断
             int readCount = socketChannel.read(buffer);
             if (readCount == -1) {
                 //连接中断
@@ -62,7 +55,10 @@ public class DefaultDataAnalyner implements Runnable {
             log.debug("channel disconnect by IOException");
             handler.disconnect(client.channel());
 //            throw new ConnectCancelException("channel disconnect when read");
-        } finally {
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        finally {
             client.stopRead();
         }
     }

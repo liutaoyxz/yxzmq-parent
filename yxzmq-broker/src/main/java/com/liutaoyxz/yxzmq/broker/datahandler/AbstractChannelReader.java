@@ -3,10 +3,10 @@ package com.liutaoyxz.yxzmq.broker.datahandler;
 import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
 import com.liutaoyxz.yxzmq.broker.datahandler.analyser.DefaultDataAnalyner;
-import com.sun.xml.internal.bind.v2.TODO;
 import org.slf4j.Logger;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Doug Tao
@@ -20,6 +20,8 @@ public abstract class AbstractChannelReader implements ChannelReader {
     private ChannelHandler handler;
 
     private final ConcurrentHashMap<String,Runnable> idToTask = new ConcurrentHashMap<>();
+
+    private AtomicInteger readCount = new AtomicInteger(1);
 
     protected AbstractChannelReader(Logger log,ChannelHandler handler) {
         this.handler = handler;
@@ -35,7 +37,7 @@ public abstract class AbstractChannelReader implements ChannelReader {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = new Thread(r);
-            thread.setName("read-thread");
+            thread.setName("read-thread"+readCount.getAndIncrement());
             return thread;
         }
     });

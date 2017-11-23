@@ -97,15 +97,14 @@ public class ReadContainer {
                             beanBytesReadPosition = 0;
                             this.stage = Stage.READ_LENGHT;
                         }
-                        break;
                     }
+                    break;
                 default:
                     log.error("read error,stage is {}",stage);
                     break;
 
             }
         }
-//        buffer.
     }
 
 

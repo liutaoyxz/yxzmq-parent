@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -18,6 +19,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * @Description:
  */
 public class YxzClient implements Client{
+
+    public static final AtomicInteger AUTO_INCREASE_CLIENT_ID = new AtomicInteger(1);
 
     private static final Logger log = LoggerFactory.getLogger(YxzClient.class);
 
@@ -37,6 +40,8 @@ public class YxzClient implements Client{
 
     private volatile boolean isReading = false;
 
+    private boolean isMainChannel;
+
     public YxzClient(String clientId, SocketChannel channel, String address,ChannelHandler handler) {
         this.clientId = clientId;
         this.channel = channel;
@@ -51,6 +56,9 @@ public class YxzClient implements Client{
 
     @Override
     public boolean startRead() {
+        if (!check()){
+            return false;
+        }
         if (!isReading){
             lock.lock();
             try {
@@ -65,7 +73,7 @@ public class YxzClient implements Client{
                         log.info("startRead,but channel is not connected,address is {}",address);
                     }
                     this.isReading = true;
-                    log.debug("client start read,address is {}",address);
+                    log.debug("client start read,address is {},thread is {},clientId is {}",address,Thread.currentThread().getName(),clientId);
                     return true;
                 }
                 return false;
@@ -74,7 +82,18 @@ public class YxzClient implements Client{
             }
         }
         return false;
+    }
 
+    private boolean check(){
+        if (!channel.isOpen()){
+            this.handler.disconnect(channel);
+            return false;
+        }
+        if (!channel.isConnected()){
+            this.handler.disconnect(channel);
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -86,7 +105,7 @@ public class YxzClient implements Client{
 
     @Override
     public void stopRead() {
-        log.debug("stop read,thread is {}",Thread.currentThread().getName());
+        log.debug("stop read,address is {},thread is {},clientId is {}",address,Thread.currentThread().getName(),clientId);
         lock.lock();
         try {
             this.isReading = false;
@@ -126,11 +145,22 @@ public class YxzClient implements Client{
     }
 
     @Override
+    public void setIsMainChannel(boolean isMainChannel) {
+        this.isMainChannel = isMainChannel;
+    }
+
+    public static String nextClientId(){
+        return "broker-client-"+AUTO_INCREASE_CLIENT_ID.getAndIncrement();
+    }
+
+    @Override
     public String toString() {
         return "YxzClient{" +
                 "clientId='" + clientId + '\'' +
-                ", channel=" + channel +
                 ", address='" + address + '\'' +
+                ", isReading=" + isReading +
+                ", isMainChannel=" + isMainChannel +
+                ", group=" + parent +
                 '}';
     }
 }

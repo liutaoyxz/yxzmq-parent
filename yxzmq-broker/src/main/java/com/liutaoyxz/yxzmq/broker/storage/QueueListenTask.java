@@ -18,10 +18,8 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Doug Tao
@@ -32,33 +30,24 @@ public class QueueListenTask implements Runnable {
 
     private BlockingDeque<QueueMessage> messages;
 
-    private CopyOnWriteArrayList<Group> groups;
+    private BlockingQueue<Group> groups;
 
     private AtomicBoolean cancel;
 
-    private final ReentrantLock lock;
-
-    private final Condition condition;
-
     public static final Logger log = LoggerFactory.getLogger(QueueListenTask.class);
 
-    public QueueListenTask(BlockingDeque<QueueMessage> messages, CopyOnWriteArrayList<Group> groups, AtomicBoolean cancel) {
+    public QueueListenTask(BlockingDeque<QueueMessage> messages, BlockingQueue<Group> groups, AtomicBoolean cancel) {
         this.messages = messages;
         this.groups = groups;
         this.cancel = cancel;
-        lock = new ReentrantLock();
-        condition = lock.newCondition();
     }
 
     @Override
     public void run() {
         while (!cancel.get()) {
-            lock.lock();
             try {
-                if (groups.size() == 0) {
-                    condition.await();
-                    continue;
-                }
+                Group group = groups.take();
+                groups.add(group);
                 grouploop:
                 for (Group g : groups) {
                     QueueMessage message = messages.take();
@@ -89,6 +78,8 @@ public class QueueListenTask implements Runnable {
                                 } catch (IOException e) {
                                     log.debug("channel cancel", e);
                                     g.delActiveClient(client);
+                                    messages.addLast(message);
+                                    continue grouploop;
                                 }
                             }
                         }
@@ -99,16 +90,9 @@ public class QueueListenTask implements Runnable {
             } catch (InterruptedException e) {
                 log.debug("queue task error", e);
             }finally {
-                lock.unlock();
+
             }
         }
     }
 
-    public Condition getCondition() {
-        return condition;
-    }
-
-    public ReentrantLock getLock() {
-        return lock;
-    }
 }
