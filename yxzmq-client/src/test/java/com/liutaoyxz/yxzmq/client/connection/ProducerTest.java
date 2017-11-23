@@ -10,7 +10,7 @@ import javax.jms.*;
 public class ProducerTest {
 
 
-    public static void main(String[] args) throws JMSException {
+    public static void main(String[] args) throws JMSException, InterruptedException {
         YxzDefaultConnectionFactory factory = YxzDefaultConnectionFactory.getFactory();
         Connection connection = factory.createConnection();
         connection.start();
@@ -19,6 +19,7 @@ public class ProducerTest {
         MessageProducer producer = session.createProducer(topic);
         long start = System.currentTimeMillis();
         for (int i = 0; i < 100000; i++) {
+            Thread.sleep(1000L);
             TextMessage textMessage = session.createTextMessage("message-liutao"+i);
             producer.send(textMessage);
         }
