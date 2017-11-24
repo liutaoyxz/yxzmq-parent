@@ -43,13 +43,14 @@ public class YxzClient implements Client{
 
     private boolean isMainChannel;
 
-    private DefaultDataAnalyner readTask = new DefaultDataAnalyner(this,this.handler);
+    private DefaultDataAnalyner readTask;
 
     public YxzClient(String clientId, SocketChannel channel, String address,ChannelHandler handler) {
         this.clientId = clientId;
         this.channel = channel;
         this.address = address;
         this.handler = handler;
+        this.readTask = new DefaultDataAnalyner(this,this.handler);
     }
 
     @Override
