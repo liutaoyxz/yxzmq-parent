@@ -48,10 +48,9 @@ public abstract class AbstractChannelReader implements ChannelReader {
      */
     @Override
     public void startRead(final Client client) {
-        if (!client.startRead()){
-            return ;
+        if (client.startRead()){
+            executorService.execute(client.getDataReadTask());
         }
-        executorService.execute(client.getDataReadTask());
     }
 
 }
