@@ -17,7 +17,7 @@ public class QueueProducerTest {
         MessageProducer producer = session.createProducer(queue);
         long start = System.currentTimeMillis();
         for (int i = 0; i < 100000; i++) {
-            Thread.sleep(500L);
+//            Thread.sleep(500L);
             TextMessage textMessage = session.createTextMessage("message-liutao"+i);
             producer.send(textMessage);
             System.out.println("send msg->"+textMessage.getText());

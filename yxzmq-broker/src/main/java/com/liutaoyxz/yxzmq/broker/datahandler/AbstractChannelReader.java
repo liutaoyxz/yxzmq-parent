@@ -19,8 +19,6 @@ public abstract class AbstractChannelReader implements ChannelReader {
 
     private ChannelHandler handler;
 
-    private final ConcurrentHashMap<String,Runnable> idToTask = new ConcurrentHashMap<>();
-
     private AtomicInteger readCount = new AtomicInteger(1);
 
     protected AbstractChannelReader(Logger log,ChannelHandler handler) {
@@ -53,25 +51,7 @@ public abstract class AbstractChannelReader implements ChannelReader {
         if (!client.startRead()){
             return ;
         }
-        executorService.execute(getTask(client));
-    }
-
-    /**
-     * 获取客户端的task 对象
-     * task 在读取结束后一定要调用 stopRead()
-     * @see Client
-     * @param client
-     * @return
-     */
-    private Runnable getTask(Client client){
-        String id = client.id();
-        Runnable task = idToTask.get(id);
-        if(idToTask.get(id) == null){
-            task = new DefaultDataAnalyner(client,handler);
-            idToTask.putIfAbsent(id,task);
-            task = idToTask.get(id);
-        }
-        return task;
+        executorService.execute(client.getDataReadTask());
     }
 
 }

@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker;
 
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
+import com.liutaoyxz.yxzmq.broker.datahandler.analyser.DefaultDataAnalyner;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import org.slf4j.Logger;
@@ -41,6 +42,8 @@ public class YxzClient implements Client{
     private volatile boolean isReading = false;
 
     private boolean isMainChannel;
+
+    private DefaultDataAnalyner readTask = new DefaultDataAnalyner(this,this.handler);
 
     public YxzClient(String clientId, SocketChannel channel, String address,ChannelHandler handler) {
         this.clientId = clientId;
@@ -147,6 +150,11 @@ public class YxzClient implements Client{
     @Override
     public void setIsMainChannel(boolean isMainChannel) {
         this.isMainChannel = isMainChannel;
+    }
+
+    @Override
+    public Runnable getDataReadTask() {
+        return this.readTask;
     }
 
     public static String nextClientId(){

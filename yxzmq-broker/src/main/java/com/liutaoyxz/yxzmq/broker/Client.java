@@ -57,4 +57,6 @@ public interface Client {
 
     void setIsMainChannel(boolean isMainChannel);
 
+    Runnable getDataReadTask();
+
 }
