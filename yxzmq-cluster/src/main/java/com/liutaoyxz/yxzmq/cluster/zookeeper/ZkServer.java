@@ -43,6 +43,15 @@ public class ZkServer {
 
         @Override
         public void process(WatchedEvent event) {
+            Event.KeeperState state = event.getState();
+            Event.EventType type = event.getType();
+            switch (type){
+
+
+                default:
+                    break;
+            }
+
             log.debug("server event :{}",event);
         }
     }

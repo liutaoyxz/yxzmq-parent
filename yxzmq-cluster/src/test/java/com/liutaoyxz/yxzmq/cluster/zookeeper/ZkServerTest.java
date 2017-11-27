@@ -26,12 +26,14 @@ public class ZkServerTest {
         AsyncCallback.StatCallback callback = new AsyncCallback.StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {
-                switch (KeeperException.Code.get(rc)) {
+                KeeperException.Code code = KeeperException.Code.get(rc);
+                log.info("callback code is {}",code);
+                switch (code) {
                     case CONNECTIONLOSS:
                         log.info("连接错误");
                         break;
                     case NODEEXISTS:
-//                        LOGGER.info("node exists");
+                        log.info("node exists");
                         break;
                     case OK:
                         log.info("创建节点--> {}", path);
