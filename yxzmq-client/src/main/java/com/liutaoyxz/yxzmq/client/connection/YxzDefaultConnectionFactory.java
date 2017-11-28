@@ -29,7 +29,7 @@ public class YxzDefaultConnectionFactory implements ConnectionFactory{
     /**
      * 默认ip
      */
-    private static final String DEFAULT_ADDRESS = "127.0.0.1:11171";
+    private static final String DEFAULT_ADDRESS = "192.9.107.77:11171";
 
     private static final YxzDefaultConnectionFactory FACTORY = new YxzDefaultConnectionFactory();
 
