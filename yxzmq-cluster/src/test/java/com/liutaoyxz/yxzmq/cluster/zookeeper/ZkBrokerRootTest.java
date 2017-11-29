@@ -43,5 +43,13 @@ public class ZkBrokerRootTest {
         latch.await();
     }
 
+    @Test
+    public void start() throws Exception{
+        ZkBrokerRoot root = new ZkBrokerRoot();
+        root.start();
+        CountDownLatch latch = new CountDownLatch(1);
+        latch.await();
+    }
+
 
 }

@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper;
 
+import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -7,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Doug Tao
@@ -38,6 +40,17 @@ public class ZkServer {
         }
         return zooKeeper;
     }
+
+    /**
+     * 启动
+     */
+    public static void start(){
+        ZooKeeper zk = getZookeeper();
+
+
+
+    }
+
 
     static class ServerWatcher implements Watcher{
 

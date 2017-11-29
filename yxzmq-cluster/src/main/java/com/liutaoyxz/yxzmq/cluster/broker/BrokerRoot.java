@@ -38,5 +38,12 @@ public interface BrokerRoot {
 
 
 
+    /**
+     * 启动
+     */
+    void start() throws InterruptedException;
+
+
+
 
 }

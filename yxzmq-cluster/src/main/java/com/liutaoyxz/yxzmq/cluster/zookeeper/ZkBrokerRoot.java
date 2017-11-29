@@ -3,10 +3,8 @@ package com.liutaoyxz.yxzmq.cluster.zookeeper;
 import com.liutaoyxz.yxzmq.cluster.broker.Broker;
 import com.liutaoyxz.yxzmq.cluster.broker.BrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.BrokerWatch;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
+import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.TopicWatch;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -15,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -36,6 +35,11 @@ public class ZkBrokerRoot implements BrokerRoot {
      * 本机的broker对象
      */
     private Broker self;
+
+    /**
+     * topics 对应的callback
+     */
+    private static ConcurrentHashMap<String,AsyncCallback.StringCallback> topics_callback = new ConcurrentHashMap<>();
 
 
     @Override
@@ -126,5 +130,22 @@ public class ZkBrokerRoot implements BrokerRoot {
     @Override
     public Broker getBroker() {
         return this.self;
+    }
+
+    @Override
+    public void start() throws InterruptedException {
+        ZooKeeper zk = ZkServer.getZookeeper();
+
+        TopicWatch topicWatch = new TopicWatch();
+        //getChildren 采用同步等待
+        try {
+            List<String> children = zk.getChildren(ZkConstant.Path.TOPICS, topicWatch);
+            log.debug("get children {}",children);
+        }catch (KeeperException.ConnectionLossException e){
+            log.debug("connection loss",e);
+        }catch (KeeperException e) {
+            log.debug("get children error",e);
+        }
+
     }
 }

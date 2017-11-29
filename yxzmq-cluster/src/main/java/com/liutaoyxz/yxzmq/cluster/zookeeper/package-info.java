@@ -13,9 +13,13 @@
  *          /127.0.0.1 -e
  *      /topics -s
  *          /t1 -s
+ *              /client1 -e
+ *              /client2 -e
  *          /t2 -s
  *      /queues
  *          /q1 -s
+ *              /client1 -e
+ *              /client2 -e
  *          /q2 -s
  *
  *
