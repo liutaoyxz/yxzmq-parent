@@ -11,11 +11,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author Doug Tao
  * @Date: 17:04 2017/11/29
- * @Description: 某一个主题下面的订阅者发生变化的callback
+ * @Description: 主题对应的callback,watch 到children发生变化之后采用异步的方式获取列表,回调broker 提供的listener
  */
-public class TopicChildrenCallback implements AsyncCallback.ChildrenCallback {
+public class TopicCallback implements AsyncCallback.ChildrenCallback {
 
-    public static final Logger log = LoggerFactory.getLogger(TopicChildrenCallback.class);
+    public static final Logger log = LoggerFactory.getLogger(TopicCallback.class);
 
     /**
      * 主题 和订阅者的映射
@@ -24,7 +24,7 @@ public class TopicChildrenCallback implements AsyncCallback.ChildrenCallback {
 
     private String topicName;
 
-    public TopicChildrenCallback(String topicName) {
+    public TopicCallback(String topicName) {
         this.topicName = topicName;
     }
 

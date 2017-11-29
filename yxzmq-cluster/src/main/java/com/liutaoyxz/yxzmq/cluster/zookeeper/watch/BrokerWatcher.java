@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
  * @Date: 14:18 2017/11/28
  * @Description:
  */
-public class BrokerWatch implements Watcher {
+public class BrokerWatcher implements Watcher {
 
-    public static final Logger log = LoggerFactory.getLogger(BrokerWatch.class);
+    public static final Logger log = LoggerFactory.getLogger(BrokerWatcher.class);
 
     @Override
     public void process(WatchedEvent event) {

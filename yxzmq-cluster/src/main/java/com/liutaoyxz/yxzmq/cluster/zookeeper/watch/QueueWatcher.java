@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
  * @Date: 15:24 2017/11/29
  * @Description:
  */
-public class QueueWatch implements Watcher {
+public class QueueWatcher implements Watcher {
 
-    public static final Logger log = LoggerFactory.getLogger(QueueWatch.class);
+    public static final Logger log = LoggerFactory.getLogger(QueueWatcher.class);
 
     @Override
     public void process(WatchedEvent event) {

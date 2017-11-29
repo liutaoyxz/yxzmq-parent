@@ -2,10 +2,9 @@ package com.liutaoyxz.yxzmq.cluster.zookeeper;
 
 import com.liutaoyxz.yxzmq.cluster.broker.Broker;
 import com.liutaoyxz.yxzmq.cluster.broker.BrokerRoot;
-import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.BrokerWatch;
-import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.TopicWatch;
+import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.BrokerWatcher;
+import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.TopicWatcher;
 import org.apache.zookeeper.*;
-import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,41 +49,41 @@ public class ZkBrokerRoot implements BrokerRoot {
             Stat stat = zk.exists(ZkConstant.Path.ROOT, false);
             if (stat == null){
                 //没有 根,创建
-                log.debug("checkRoot,root is null");
+                log.info("checkRoot,root is null");
                 String rootCreate = zk.create(ZkConstant.Path.ROOT, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                log.debug("root create result is {}",rootCreate);
+                log.info("root create result is {}",rootCreate);
                 String brokersCreate = zk.create(ZkConstant.Path.BROKERS, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                log.debug("brokers create result is {}",brokersCreate);
+                log.info("brokers create result is {}",brokersCreate);
                 String clientsCreate = zk.create(ZkConstant.Path.CLIENTS, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                log.debug("clients create result is {}",clientsCreate);
+                log.info("clients create result is {}",clientsCreate);
                 String topicsCreate = zk.create(ZkConstant.Path.TOPICS, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                log.debug("topics create result is {}",topicsCreate);
+                log.info("topics create result is {}",topicsCreate);
                 String queuesCreate = zk.create(ZkConstant.Path.QUEUES, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                log.debug("queues create result is {}",queuesCreate);
+                log.info("queues create result is {}",queuesCreate);
             }else {
                 //检查 其他4个目录
                 Stat brokersStat = zk.exists(ZkConstant.Path.BROKERS, false);
                 if(brokersStat == null){
                     String brokersCreate = zk.create(ZkConstant.Path.BROKERS, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    log.debug("brokers create result is {}",brokersCreate);
+                    log.info("brokers create result is {}",brokersCreate);
                 }
                 Stat clientsStat = zk.exists(ZkConstant.Path.CLIENTS, false);
                 if (clientsStat == null){
                     String clientsCreate = zk.create(ZkConstant.Path.CLIENTS, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    log.debug("clients create result is {}",clientsCreate);
+                    log.info("clients create result is {}",clientsCreate);
                 }
                 Stat topicsStat = zk.exists(ZkConstant.Path.TOPICS, false);
                 if (topicsStat == null){
                     String topicsCreate = zk.create(ZkConstant.Path.TOPICS, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    log.debug("topics create result is {}",topicsCreate);
+                    log.info("topics create result is {}",topicsCreate);
                 }
                 Stat queuesStat = zk.exists(ZkConstant.Path.QUEUES, false);
                 if (queuesStat == null){
                     String queuesCreate = zk.create(ZkConstant.Path.QUEUES, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    log.debug("queues create result is {}",queuesCreate);
+                    log.info("queues create result is {}",queuesCreate);
                 }
 
-                log.debug("brokersStat is {},clientsStat is {},topicsStat is {},queuesStat is {}",
+                log.info("brokersStat is {},clientsStat is {},topicsStat is {},queuesStat is {}",
                         brokersStat,clientsStat,topicsStat,queuesStat);
             }
             return true;
@@ -101,7 +100,7 @@ public class ZkBrokerRoot implements BrokerRoot {
         ZooKeeper zk = ZkServer.getZookeeper();
         try {
             String hostAddress = InetAddress.getLocalHost().getHostAddress();
-            log.debug("hostAddress is {}",hostAddress);
+            log.info("hostAddress is {}",hostAddress);
             String brokerName = hostAddress+":"+port + "-";
             String createPath = zk.create(ZkConstant.Path.BROKERS + "/" + brokerName, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
             log.info("create broker path is {}",createPath);
@@ -119,7 +118,7 @@ public class ZkBrokerRoot implements BrokerRoot {
     public List<String> brokers() throws InterruptedException {
         ZooKeeper zk = ZkServer.getZookeeper();
         try {
-            List<String> children = zk.getChildren(ZkConstant.Path.BROKERS, new BrokerWatch());
+            List<String> children = zk.getChildren(ZkConstant.Path.BROKERS, new BrokerWatcher());
             return children;
         } catch (KeeperException e) {
             log.error("get brokers error",e);
@@ -134,17 +133,18 @@ public class ZkBrokerRoot implements BrokerRoot {
 
     @Override
     public void start() throws InterruptedException {
+        checkRoot();
         ZooKeeper zk = ZkServer.getZookeeper();
 
-        TopicWatch topicWatch = new TopicWatch();
+        TopicWatcher topicWatch = new TopicWatcher();
         //getChildren 采用同步等待
         try {
             List<String> children = zk.getChildren(ZkConstant.Path.TOPICS, topicWatch);
-            log.debug("get children {}",children);
+            log.info("get children {}",children);
         }catch (KeeperException.ConnectionLossException e){
-            log.debug("connection loss",e);
+            log.info("connection loss",e);
         }catch (KeeperException e) {
-            log.debug("get children error",e);
+            log.info("get children error",e);
         }
 
     }
