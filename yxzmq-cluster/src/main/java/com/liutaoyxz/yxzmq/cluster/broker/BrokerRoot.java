@@ -28,9 +28,13 @@ public interface BrokerRoot {
      * 获得broker 的列表
      * @return
      */
-    List<String> brokers();
+    List<String> brokers() throws InterruptedException;
 
-
+    /**
+     * 获得本机的broker对象
+     * @return
+     */
+    Broker getBroker();
 
 
 

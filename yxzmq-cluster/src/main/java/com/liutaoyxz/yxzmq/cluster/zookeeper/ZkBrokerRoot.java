@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper;
 
+import com.liutaoyxz.yxzmq.cluster.broker.Broker;
 import com.liutaoyxz.yxzmq.cluster.broker.BrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.BrokerWatch;
 import org.apache.zookeeper.CreateMode;
@@ -14,16 +15,27 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Doug Tao
  * @Date: 10:23 2017/11/28
- * @Description:
+ * @Description: 当有新连接加到brokers 的时候需要修改备份策略, 当前broker的主体需要接受全部上游的数据,下游的broker需要清理之前的数据然后接受当前broker的数据
  */
 public class ZkBrokerRoot implements BrokerRoot {
 
 
     public static final Logger log = LoggerFactory.getLogger(ZkBrokerRoot.class);
+
+    /**
+     * broker 锁,更新broker和镜像同步信息时需要获得锁
+     */
+    private ReentrantLock brokerLock = new ReentrantLock();
+
+    /**
+     * 本机的broker对象
+     */
+    private Broker self;
 
 
     @Override
@@ -100,16 +112,19 @@ public class ZkBrokerRoot implements BrokerRoot {
     }
 
     @Override
-    public List<String> brokers() {
+    public List<String> brokers() throws InterruptedException {
         ZooKeeper zk = ZkServer.getZookeeper();
         try {
             List<String> children = zk.getChildren(ZkConstant.Path.BROKERS, new BrokerWatch());
             return children;
         } catch (KeeperException e) {
             log.error("get brokers error",e);
-        } catch (InterruptedException e) {
-            log.error("get brokers error",e);
         }
         return null;
+    }
+
+    @Override
+    public Broker getBroker() {
+        return this.self;
     }
 }
