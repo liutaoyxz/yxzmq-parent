@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * @author Doug Tao
  * @Date: 15:24 2017/11/29
- * @Description:
+ * @Description: 管理topic下面的所有订阅者 和所有的topic,当添加主题或者某个主题增加订阅者的时候需要通知broker进行操作
  */
 public class TopicWatch implements Watcher {
 
@@ -43,5 +43,8 @@ public class TopicWatch implements Watcher {
         zk.getChildren(ZkConstant.Path.TOPICS, this, callback, null);
 
     }
+
+
+
 
 }
