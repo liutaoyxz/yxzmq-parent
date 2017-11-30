@@ -2,6 +2,7 @@ package com.liutaoyxz.yxzmq.cluster.zookeeper.watch;
 
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkServer;
+import com.liutaoyxz.yxzmq.cluster.zookeeper.callback.TopicCallback;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.callback.TopicChildrenCallback;
 import org.apache.zookeeper.*;
 import org.slf4j.Logger;
@@ -12,80 +13,81 @@ import java.util.List;
 /**
  * @author Doug Tao
  * @Date: 15:24 2017/11/29
- * @Description: 管理topic下面的所有订阅者 和所有的topic,当添加主题或者某个主题增加订阅者的时候需要通知broker进行操作
+ * @Description: watch topics下面的所有主题的变化,当主题变化之后需要监视主题
  */
 public class TopicWatcher implements Watcher {
 
     public static final Logger log = LoggerFactory.getLogger(TopicWatcher.class);
 
-    private AsyncCallback.ChildrenCallback callback;
+    private TopicCallback callback;
 
-    public TopicWatcher() {
-        this.callback = new AsyncCallback.ChildrenCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, List<String> children) {
-                ZooKeeper zk = ZkServer.getZookeeper();
+    private static final TopicWatcher WATCHER = new TopicWatcher();
 
-                KeeperException.Code code = KeeperException.Code.get(rc);
-                log.info("ChildrenCallback code is {}", code);
-                log.info("ChildrenCallback children is {}", children);
-                for (String c : children) {
-                    //查询每个主体下的订阅者并且监视这个主题,当订阅者发生变化时要修改本地列表
-                    TopicWatcher.this.getTopicSubscriberies(c);
-                }
-                log.info("set watch for path {}", path);
-                zk.exists(ZkConstant.Path.TOPICS, TopicWatcher.this, null, null);
+    private TopicWatcher() {
+    }
 
-            }
-        };
+    public static TopicWatcher getWatcher() {
+        TopicWatcher watcher = new TopicWatcher();
+        watcher.callback = new TopicCallback(watcher);
+        return watcher;
     }
 
     @Override
     public void process(WatchedEvent event) {
-        log.info("topic watch,event is {}", event);
+        log.debug("topics watch,event is {}", event);
+        String path = event.getPath();
+        Event.EventType type = event.getType();
+        Event.KeeperState state = event.getState();
         ZooKeeper zk = ZkServer.getZookeeper();
-        zk.getChildren(ZkConstant.Path.TOPICS, this, callback, null);
+        switch (state) {
+            case Disconnected:
+                //失去连接
+                log.warn("watch topics,state is Disconnected");
+                break;
+            case Expired:
+                //连接过期
+                log.warn("watch topics,state is Expired");
+                break;
+            default:
+                log.info("watch topics,state is {}", state);
+                break;
+        }
+        switch (type) {
+            case NodeChildrenChanged:
+                //子节点变化
+                log.info("topics childrenChanged,path is {}", path);
+                zk.getChildren(ZkConstant.Path.TOPICS, this, callback, path);
+                break;
+//            case NodeDeleted:
+//                //   /yxzmq/topics 节点被删除,不应该出现
+//                break;
+//
+//            case NodeCreated:
+//                //  /yxzmq/topics 节点被创建,也不应该出现
+//                break;
+//            case NodeDataChanged:
+//                //  /yxzmq/topics 节点数据发生变化, 不应该出现
+//
+//                break;
+            default:
+                log.warn("topics watch type is not hit,type is {}", type);
+                break;
+        }
 
     }
 
     /**
-     * 异步获取某一个主题的children,并同时对这个主题进行监视
-     * @param topicName
-     * @return
+     * 启动是调用,监视每一个topic
+     *
+     * @param children
      */
-    private TopicChildrenCallback getTopicSubscriberies(String topicName) {
-        log.info("set watch for topic {}", topicName);
-        String path = ZkConstant.Path.TOPICS + "/" + topicName;
+    public void watchChildren(List<String> children){
         ZooKeeper zk = ZkServer.getZookeeper();
-        TopicChildrenCallback callback = new TopicChildrenCallback(topicName);
-        zk.getChildren(path, new WatcherForTopic(topicName,callback), callback, null);
-        return callback;
-    }
-
-    /**
-     * 为一个固定的主题提供的watcher
-     */
-    class WatcherForTopic implements Watcher{
-
-        private String topicName;
-
-        private AsyncCallback.ChildrenCallback callback;
-
-        public WatcherForTopic(String topicName, AsyncCallback.ChildrenCallback callback) {
-            this.topicName = topicName;
-            this.callback = callback;
-        }
-
-        @Override
-        public void process(WatchedEvent event) {
-            String path = event.getPath();
-            ZooKeeper zk = ZkServer.getZookeeper();
-            log.info("watch event path is {}",path);
-            Event.EventType type = event.getType();
-            log.info("type is {}",type);
-            log.info("continue watch for topic {}",this.topicName);
-            zk.getChildren(path,this,this.callback,null);
+        for (String child : children) {
+            String path = ZkConstant.Path.TOPICS + "/" + child;
+            TopicChildrenCallback.watchTopic(child);
         }
     }
+
 
 }

@@ -136,11 +136,12 @@ public class ZkBrokerRoot implements BrokerRoot {
         checkRoot();
         ZooKeeper zk = ZkServer.getZookeeper();
 
-        TopicWatcher topicWatch = new TopicWatcher();
+        TopicWatcher topicWatch = TopicWatcher.getWatcher();
         //getChildren 采用同步等待
         try {
             List<String> children = zk.getChildren(ZkConstant.Path.TOPICS, topicWatch);
             log.info("get children {}",children);
+            topicWatch.watchChildren(children);
         }catch (KeeperException.ConnectionLossException e){
             log.info("connection loss",e);
         }catch (KeeperException e) {
