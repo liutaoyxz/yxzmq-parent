@@ -3,8 +3,12 @@ package com.liutaoyxz.yxzmq.cluster.zookeeper;
 import com.liutaoyxz.yxzmq.cluster.broker.Broker;
 import com.liutaoyxz.yxzmq.cluster.broker.BrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.BrokerWatcher;
+import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.QueueWatcher;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.TopicWatcher;
-import org.apache.zookeeper.*;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -35,11 +38,11 @@ public class ZkBrokerRoot implements BrokerRoot {
      */
     private Broker self;
 
-    /**
-     * topics 对应的callback
-     */
-    private static ConcurrentHashMap<String,AsyncCallback.StringCallback> topics_callback = new ConcurrentHashMap<>();
+    private int port;
 
+    public ZkBrokerRoot(int port) {
+        this.port = port;
+    }
 
     @Override
     public boolean checkRoot() {
@@ -96,7 +99,7 @@ public class ZkBrokerRoot implements BrokerRoot {
     }
 
     @Override
-    public boolean register(int port) {
+    public boolean register() {
         ZooKeeper zk = ZkServer.getZookeeper();
         try {
             String hostAddress = InetAddress.getLocalHost().getHostAddress();
@@ -137,11 +140,15 @@ public class ZkBrokerRoot implements BrokerRoot {
         ZooKeeper zk = ZkServer.getZookeeper();
 
         TopicWatcher topicWatch = TopicWatcher.getWatcher();
+        QueueWatcher queueWatcher = QueueWatcher.getWatcher();
         //getChildren 采用同步等待
         try {
-            List<String> children = zk.getChildren(ZkConstant.Path.TOPICS, topicWatch);
-            log.info("get children {}",children);
-            topicWatch.watchChildren(children);
+            List<String> topicChildren = zk.getChildren(ZkConstant.Path.TOPICS, topicWatch);
+            log.info("topics children {}",topicChildren);
+            topicWatch.watchChildren(topicChildren);
+            List<String> queueChildren = zk.getChildren(ZkConstant.Path.QUEUES, queueWatcher);
+            log.info("queues children {}",topicChildren);
+            queueWatcher.watchChildren(queueChildren);
         }catch (KeeperException.ConnectionLossException e){
             log.info("connection loss",e);
         }catch (KeeperException e) {

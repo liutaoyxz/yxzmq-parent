@@ -19,10 +19,9 @@ public interface BrokerRoot {
 
     /**
      * 注册到zookeeper
-     * @param port
      * @return
      */
-    boolean register(int port);
+    boolean register();
 
     /**
      * 获得broker 的列表

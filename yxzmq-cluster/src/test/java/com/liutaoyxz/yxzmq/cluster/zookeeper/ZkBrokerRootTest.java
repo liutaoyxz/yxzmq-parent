@@ -7,8 +7,6 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Doug Tao
  * @Date: 10:54 2017/11/28
@@ -44,7 +42,7 @@ public class ZkBrokerRootTest {
     }
 
     @Test
-    public void start() throws Exception{
+    public void stcreatart() throws Exception{
         ZkBrokerRoot root = new ZkBrokerRoot();
         root.start();
         CountDownLatch latch = new CountDownLatch(1);

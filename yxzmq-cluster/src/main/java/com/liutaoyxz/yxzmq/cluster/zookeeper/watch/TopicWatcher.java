@@ -21,8 +21,6 @@ public class TopicWatcher implements Watcher {
 
     private TopicCallback callback;
 
-    private static final TopicWatcher WATCHER = new TopicWatcher();
-
     private TopicWatcher() {
     }
 
@@ -82,9 +80,7 @@ public class TopicWatcher implements Watcher {
      * @param children
      */
     public void watchChildren(List<String> children){
-        ZooKeeper zk = ZkServer.getZookeeper();
         for (String child : children) {
-            String path = ZkConstant.Path.TOPICS + "/" + child;
             TopicChildrenCallback.watchTopic(child);
         }
     }
