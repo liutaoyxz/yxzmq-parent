@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.cluster.broker;
 
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Doug Tao
@@ -10,7 +11,7 @@ import java.util.LinkedList;
  * 如果subject 是null,说明自己是第一个,subject就是 tail,如果同时tail 也是null,说明全局就一个broker
  *
  */
-public class Broker {
+public class Broker implements Comparable<Broker>{
 
     /**
      * 自己的name
@@ -28,34 +29,46 @@ public class Broker {
     private Broker subject;
 
     /**
-     * 第一个
+     * broker数量
      */
-    private Broker head;
+    private int size;
 
-    /**
-     * 最后一个
-     */
-    private Broker tail;
+    private volatile boolean ready = false;
 
-    private Broker(){
-
+    public Broker(String name){
+        this.name = name;
     }
 
-    public static Broker createBrokers(LinkedList<String> list){
+    /**
+     * 创建broker列表,返回本机的broker
+     * @param list
+     * @return
+     */
+    public static Broker createBrokers(List<String> list){
         if (list == null || list.isEmpty()){
             return null;
         }
-        if (list.size() == 1){
-            //就一个broker,head 和 tail都是null
-            Broker broker = new Broker();
-            broker.name = list.pollFirst();
-            return broker;
-        }
-
-
-
 
         return null;
     }
+
+    @Override
+    public int compareTo(Broker other) {
+        return 0;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void ready(){
+        this.ready = true;
+    }
+
+    public boolean isReady(){
+        return this.ready;
+    }
+
+
 
 }

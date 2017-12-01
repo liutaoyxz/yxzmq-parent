@@ -19,7 +19,13 @@ public interface ZkConstant {
 
         String QUEUES = ROOT + "/queues";
 
+    }
 
+    interface BrokerState{
+
+        String NOT_READY = "notReady";
+
+        String READY = "ready";
 
     }
 
