@@ -5,7 +5,9 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.Test;
 
 import java.sql.*;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Doug Tao
@@ -17,44 +19,7 @@ public class DerbyUtilTest {
 
     @Test
     public void derbyConnTest(){
-        String driver = "org.apache.derby.jdbc.EmbeddedDriver";
-        String url = "jdbc:derby:/Users/liutao/db/derby;create=true";
-        Connection conn;
-        try {
-            Class.forName(driver);
-            conn = DriverManager.getConnection(url);
-            Statement statement = conn.createStatement();
-//            String createSchema = "create schema yxzmq";
-//            statement.execute(createSchema);
 
-            String setSchema = "set schema yxzmq";
-
-            statement.execute(setSchema);
-            String createTable = "CREATE TABLE queue " +
-                    "(" +
-                    "  ID int PRIMARY KEY NOT NULL," +
-                    "  NAME varchar(255) NOT NULL," +
-                    "  BROKER_NAME varchar(255) NOT NULL," +
-                    "  CREATE_TIME timestamp DEFAULT current timestamp" +
-                    ")";
-
-            statement.execute(createTable);
-
-            String select = "select * from queue";
-
-            boolean execute = statement.execute(select);
-
-            ResultSet resultSet = statement.getResultSet();
-            System.out.println(resultSet);
-
-
-            CountDownLatch latch = new CountDownLatch(1);
-            latch.await();
-        }catch(Exception e) {
-            e.printStackTrace();
-        }finally {
-
-        }
 
 
     }
@@ -153,11 +118,36 @@ public class DerbyUtilTest {
 
     @Test
     public void templeteTest() throws Exception {
-        DerbyTemplate templete = DerbyTemplate.createTemplete("/Users/liutao/yxzmqData");
+        DerbyTemplate templete = DerbyTemplate.createTemplate("/Users/liutao/yxzmqData");
         templete.test();
 
     }
 
+    @Test
+    public void insertTest() throws Exception{
+        DerbyTemplate template = DerbyTemplate.createTemplate("/Users/liutao/yxzmqData");
+        AtomicInteger queueId = new AtomicInteger(1);
+        String brokerName = "127.0.0.1:11171";
+        for (int i = 0; i < 1000; i++) {
+
+            QueueModal queue = new QueueModal();
+            queue.setQueueId(queueId.getAndIncrement() + "");
+            queue.setBrokerName(brokerName);
+            queue.setMessage("message"+(i+1));
+            queue.setQueueName("q1");
+            template.insertQueue(queue);
+        }
+
+
+        List<QueueModal> list = template.selectByBrokerName(brokerName);
+        System.out.println(list);
+
+        template.deleteByBrokerName(brokerName);
+
+        List<QueueModal> list2 = template.selectByBrokerName(brokerName);
+        System.out.println(list2);
+
+    }
 
 
 

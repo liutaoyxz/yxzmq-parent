@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.io.derby;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
@@ -9,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Doug Tao
@@ -57,7 +60,7 @@ public class DerbyTemplate {
     }
 
 
-    public synchronized static DerbyTemplate createTemplete(int maxIdle, int maxTotal, int minIdle, String dataDir) throws Exception {
+    public synchronized static DerbyTemplate createTemplate(int maxIdle, int maxTotal, int minIdle, String dataDir) throws Exception {
         log.info("start create derby db");
         if (template == null) {
             template = new DerbyTemplate(maxIdle, maxTotal, minIdle, dataDir);
@@ -74,8 +77,8 @@ public class DerbyTemplate {
         return template;
     }
 
-    public synchronized static DerbyTemplate createTemplete(String dataDir) throws Exception {
-        return createTemplete(DEFAULT_MAXIDLE,DEFAULT_MAXTOTAL,DEFAULT_MINIDLE,dataDir);
+    public synchronized static DerbyTemplate createTemplate(String dataDir) throws Exception {
+        return createTemplate(DEFAULT_MAXIDLE,DEFAULT_MAXTOTAL,DEFAULT_MINIDLE,dataDir);
     }
 
 
@@ -109,9 +112,10 @@ public class DerbyTemplate {
         String createTable = "CREATE TABLE queue " +
                 "(" +
                 "  ID int PRIMARY KEY NOT NULL GENERATED ALWAYS AS IDENTITY," +
-                "  QUEUE_ID varchar(255) UNIQUE NOT NULL," +
+                "  QUEUE_ID varchar(255) NOT NULL," +
                 "  BROKER_NAME varchar(255) NOT NULL," +
-                "  NAME varchar(255) NOT NULL," +
+                "  QUEUE_NAME varchar(255) NOT NULL," +
+                "  MESSAGE varchar(255) NOT NULL," +
                 "  CREATE_TIME timestamp DEFAULT current timestamp" +
                 ")";
 
@@ -159,6 +163,105 @@ public class DerbyTemplate {
                 pool.returnObject(conn);
             }
 
+        }
+    }
+
+
+    public int insertQueue(QueueModal queue) throws Exception {
+        if (queue == null) {
+            return 0;
+        }
+        String sql = "INSERT INTO QUEUE (QUEUE_ID,BROKER_NAME,QUEUE_NAME,MESSAGE) VALUES(?,?,?,?)";
+        Connection conn = pool.borrowObject();
+        PreparedStatement pstm = null;
+        try {
+            pstm = conn.prepareCall(sql);
+            pstm.setString(1,queue.getQueueId());
+            pstm.setString(2,queue.getBrokerName());
+            pstm.setString(3,queue.getQueueName());
+            pstm.setString(4,queue.getMessage());
+            boolean execute = pstm.execute();
+            if(execute){
+                return 1;
+            }
+        }finally {
+            pstm.close();
+            pool.returnObject(conn);
+        }
+        return 0;
+    }
+
+    public List<QueueModal> selectByBrokerName(String brokerName) throws Exception {
+        if (StringUtils.isBlank(brokerName)){
+            return new ArrayList<>();
+        }
+        String sql = "SELECT * FROM queue WHERE BROKER_NAME = ?";
+        Connection conn = pool.borrowObject();
+        PreparedStatement pstm = null;
+        List<QueueModal> result = null;
+        try {
+            pstm = conn.prepareCall(sql);
+            pstm.setString(1,brokerName);
+            ResultSet resultSet = pstm.executeQuery();
+            int size = resultSet.getFetchSize();
+            result = new ArrayList<>(size);
+            while (resultSet.next()) {
+                String message = resultSet.getString("MESSAGE");
+                String queueId = resultSet.getString("QUEUE_ID");
+                String queueName = resultSet.getString("QUEUE_NAME");
+                int id = resultSet.getInt("ID");
+                QueueModal queue = new QueueModal();
+                queue.setBrokerName(brokerName);
+                queue.setId(id);
+                queue.setMessage(message);
+                queue.setQueueId(queueId);
+                queue.setQueueName(queueName);
+                result.add(queue);
+            }
+        }finally {
+            pstm.close();
+            pool.returnObject(conn);
+        }
+        return result;
+    }
+
+    /**
+     * 根据brokerName 和 queueId 删除消息
+     * @param brokerName
+     * @param queueId
+     * @throws Exception
+     */
+    public void deleteByQueueIdAndBrokerName(String brokerName,String queueId) throws Exception{
+        String sql = "DELETE FROM queue WHERE BROKER_NAME = ? AND queueId = ?";
+        Connection conn = pool.borrowObject();
+        PreparedStatement pstm = null;
+        try {
+            pstm = conn.prepareCall(sql);
+            pstm.setString(1,brokerName);
+            pstm.setString(2,queueId);
+            pstm.execute();
+        }finally {
+            pstm.close();
+            pool.returnObject(conn);
+        }
+    }
+
+    /**
+     * 根据brokerName 删除消息
+     * @param brokerName
+     * @throws Exception
+     */
+    public void deleteByBrokerName(String brokerName) throws Exception{
+        String sql = "DELETE FROM queue WHERE BROKER_NAME = ?";
+        Connection conn = pool.borrowObject();
+        PreparedStatement pstm = null;
+        try {
+            pstm = conn.prepareCall(sql);
+            pstm.setString(1,brokerName);
+            pstm.execute();
+        }finally {
+            pstm.close();
+            pool.returnObject(conn);
         }
     }
 
