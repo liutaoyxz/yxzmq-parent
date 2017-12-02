@@ -153,7 +153,7 @@ public class DerbyUtilTest {
 
     @Test
     public void templeteTest() throws Exception {
-        DerbyTemplet templete = DerbyTemplet.createTemplete("/Users/liutao/yxzmqData");
+        DerbyTemplate templete = DerbyTemplate.createTemplete("/Users/liutao/yxzmqData");
         templete.test();
 
     }
