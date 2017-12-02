@@ -1,5 +1,7 @@
 package com.liutaoyxz.yxzmq.io.derby;
 
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.Test;
 
 import java.sql.*;
@@ -103,8 +105,60 @@ public class DerbyUtilTest {
         }finally {
 
         }
+    }
 
+    @Test
+    public void propertyTest(){
+        System.out.println(System.getProperty("user.home"));
+    }
+
+    @Test
+    public void poolTest() throws Exception {
+        String driver = "org.apache.derby.jdbc.EmbeddedDriver";
+        String url = "jdbc:derby:/Users/liutao/db/derby;create=true";
+        DerbyPoolFactory factory = new DerbyPoolFactory(url,"yxzmq");
+        GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+        config.setMaxIdle(10);
+        config.setMaxTotal(10);
+        config.setMinIdle(0);
+        GenericObjectPool<Connection> pool = new GenericObjectPool<>(factory,config);
+        for (int j = 0; j < 20; j++) {
+            Connection conn = pool.borrowObject();
+            try {
+                String selectSql = "select * from queue";
+                Statement sm = conn.createStatement();
+                boolean execute = sm.execute(selectSql);
+                System.out.println("execute result :"+execute);
+                ResultSet resultSet = sm.getResultSet();
+                ResultSetMetaData metaData = resultSet.getMetaData();
+                int columnCount = metaData.getColumnCount();
+
+                for (int i = 1; i <= columnCount ; i++) {
+                    System.out.print(metaData.getColumnName(i) + "\t");
+                }
+                System.out.println();
+                while (resultSet.next()){
+                    for (int i = 1; i <= columnCount; i++) {
+                        System.out.print(resultSet.getString(i)+"\t");
+                    }
+                    System.out.println();
+                }
+                System.out.println("----------------"+j+"--------------");
+            }finally {
+                pool.returnObject(conn);
+            }
+
+        }
+    }
+
+    @Test
+    public void templeteTest() throws Exception {
+        DerbyTemplete templete = DerbyTemplete.createTemplete("/Users/liutao/yxzmqData");
+        templete.test();
 
     }
+
+
+
 
 }

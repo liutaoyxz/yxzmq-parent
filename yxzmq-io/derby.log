@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Sat Dec 02 20:28:10 CST 2017:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.14.1.0 - (1808820): instance a816c00e-0160-1732-c21a-000005842a00 
+on database directory /Users/liutao/yxzmqData/yxzmq/db with class loader sun.misc.Launcher$AppClassLoader@18b4aac2 
+Loaded from file:/Users/liutao/.m2/repository/org/apache/derby/derby/10.14.1.0/derby-10.14.1.0.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_131-b11
+user.dir=/Users/liutao/IdeaProjects/yxzmq-parent/yxzmq-io
+os.name=Mac OS X
+os.arch=x86_64
+os.version=10.13.1
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
