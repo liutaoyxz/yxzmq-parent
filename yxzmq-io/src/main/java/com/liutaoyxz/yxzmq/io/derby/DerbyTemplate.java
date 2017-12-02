@@ -43,7 +43,7 @@ public class DerbyTemplate {
 
     private GenericObjectPool<Connection> pool;
 
-    private static DerbyTemplate templete;
+    private static DerbyTemplate template;
 
     private DerbyTemplate(int maxIdle, int maxTotal, int minIdle, String dataDir) {
         if (maxTotal <= 0 || minIdle < 0 || minIdle > maxIdle
@@ -59,19 +59,19 @@ public class DerbyTemplate {
 
     public synchronized static DerbyTemplate createTemplete(int maxIdle, int maxTotal, int minIdle, String dataDir) throws Exception {
         log.info("start create derby db");
-        if (templete == null) {
-            templete = new DerbyTemplate(maxIdle, maxTotal, minIdle, dataDir);
+        if (template == null) {
+            template = new DerbyTemplate(maxIdle, maxTotal, minIdle, dataDir);
             String url = createUrl();
-            templete.initDB(url);
+            template.initDB(url);
             DerbyPoolFactory factory = new DerbyPoolFactory(url, DATABASE);
             GenericObjectPoolConfig config = new GenericObjectPoolConfig();
             config.setMaxIdle(maxIdle);
             config.setMaxTotal(maxTotal);
             config.setMinIdle(minIdle);
-            templete.pool = new GenericObjectPool<>(factory, config);
+            template.pool = new GenericObjectPool<>(factory, config);
         }
         log.info("create derby db finished");
-        return templete;
+        return template;
     }
 
     public synchronized static DerbyTemplate createTemplete(String dataDir) throws Exception {
@@ -86,7 +86,7 @@ public class DerbyTemplate {
      * @throws IOException
      */
     private static String createUrl() throws IOException {
-        final String dir = templete.dataDir;
+        final String dir = template.dataDir;
         String dataDir = null;
         if (dir.endsWith("/")) {
             dataDir = dir + "yxzmq";
