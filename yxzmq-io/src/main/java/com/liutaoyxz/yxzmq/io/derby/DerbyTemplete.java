@@ -109,7 +109,7 @@ public class DerbyTemplete {
         String createTable = "CREATE TABLE queue " +
                 "(" +
                 "  ID int PRIMARY KEY NOT NULL GENERATED ALWAYS AS IDENTITY," +
-                "  QUEUE_ID varchar(255) NOT NULL," +
+                "  QUEUE_ID varchar(255) UNIQUE NOT NULL," +
                 "  BROKER_NAME varchar(255) NOT NULL," +
                 "  NAME varchar(255) NOT NULL," +
                 "  CREATE_TIME timestamp DEFAULT current timestamp" +
