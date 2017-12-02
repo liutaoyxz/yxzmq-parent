@@ -19,11 +19,11 @@ public class DerbyTemplete {
 
     public static final Logger log = LoggerFactory.getLogger(DerbyTemplete.class);
 
-    private static int DEFAULT_MAXIDLE = 10;
+    private static final int DEFAULT_MAXIDLE = 10;
 
-    private static int DEFAULT_MAXTOTAL = 10;
+    private static final int DEFAULT_MAXTOTAL = 10;
 
-    private static int DEFAULT_MINIDLE = 5;
+    private static final int DEFAULT_MINIDLE = 5;
 
     /**
      * database name
