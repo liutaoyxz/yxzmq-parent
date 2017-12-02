@@ -15,9 +15,9 @@ import java.sql.*;
  * @Date 下午11:09 2017/12/1
  * @Description: derby templete,执行 持久化操作
  */
-public class DerbyTemplete {
+public class DerbyTemplet {
 
-    public static final Logger log = LoggerFactory.getLogger(DerbyTemplete.class);
+    public static final Logger log = LoggerFactory.getLogger(DerbyTemplet.class);
 
     private static final int DEFAULT_MAXIDLE = 10;
 
@@ -43,9 +43,9 @@ public class DerbyTemplete {
 
     private GenericObjectPool<Connection> pool;
 
-    private static DerbyTemplete templete;
+    private static DerbyTemplet templete;
 
-    private DerbyTemplete(int maxIdle, int maxTotal, int minIdle, String dataDir) {
+    private DerbyTemplet(int maxIdle, int maxTotal, int minIdle, String dataDir) {
         if (maxTotal <= 0 || minIdle < 0 || minIdle > maxIdle
                 || maxIdle > maxTotal || maxIdle < 0) {
             throw new IllegalArgumentException();
@@ -57,10 +57,10 @@ public class DerbyTemplete {
     }
 
 
-    public synchronized static DerbyTemplete createTemplete(int maxIdle, int maxTotal, int minIdle, String dataDir) throws Exception {
+    public synchronized static DerbyTemplet createTemplete(int maxIdle, int maxTotal, int minIdle, String dataDir) throws Exception {
         log.info("start create derby db");
         if (templete == null) {
-            templete = new DerbyTemplete(maxIdle, maxTotal, minIdle, dataDir);
+            templete = new DerbyTemplet(maxIdle, maxTotal, minIdle, dataDir);
             String url = createUrl();
             templete.initDB(url);
             DerbyPoolFactory factory = new DerbyPoolFactory(url, DATABASE);
@@ -74,7 +74,7 @@ public class DerbyTemplete {
         return templete;
     }
 
-    public synchronized static DerbyTemplete createTemplete(String dataDir) throws Exception {
+    public synchronized static DerbyTemplet createTemplete(String dataDir) throws Exception {
         return createTemplete(DEFAULT_MAXIDLE,DEFAULT_MAXTOTAL,DEFAULT_MINIDLE,dataDir);
     }
 
