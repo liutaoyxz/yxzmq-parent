@@ -128,6 +128,7 @@ public class DerbyUtilTest {
         DerbyTemplate template = DerbyTemplate.createTemplate("/Users/liutao/yxzmqData");
         AtomicInteger queueId = new AtomicInteger(1);
         String brokerName = "127.0.0.1:11171";
+        boolean sync = true;
         for (int i = 0; i < 1000; i++) {
 
             QueueModal queue = new QueueModal();
@@ -135,17 +136,39 @@ public class DerbyUtilTest {
             queue.setBrokerName(brokerName);
             queue.setMessage("message"+(i+1));
             queue.setQueueName("q1");
-            template.insertQueue(queue);
+            template.insertQueue(queue,sync);
         }
 
 
         List<QueueModal> list = template.selectByBrokerName(brokerName);
-        System.out.println(list);
+        System.out.println(list.size());
 
-        template.deleteByBrokerName(brokerName);
+        list = template.selectByBrokerName(brokerName);
+        System.out.println(list.size());
+
+        list = template.selectByBrokerName(brokerName);
+        System.out.println(list.size());
+
+        list = template.selectByBrokerName(brokerName);
+        System.out.println(list.size());
+
+
+//        template.test();
+        System.out.println("-----------delete----------");
+        template.deleteByBrokerName(brokerName,sync);
+
 
         List<QueueModal> list2 = template.selectByBrokerName(brokerName);
-        System.out.println(list2);
+        System.out.println(list2.size());
+
+        list2 = template.selectByBrokerName(brokerName);
+        System.out.println(list2.size());
+
+        list2 = template.selectByBrokerName(brokerName);
+        System.out.println(list2.size());
+
+        list2 = template.selectByBrokerName(brokerName);
+        System.out.println(list2.size());
 
     }
 

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * @author Doug Tao
@@ -40,6 +41,11 @@ public class DerbyTemplate {
     private int minIdle;
 
     /**
+     * 执行sql任务的线程池
+     */
+    private ExecutorService executor;
+
+    /**
      * 数据目录
      */
     private String dataDir;
@@ -57,6 +63,15 @@ public class DerbyTemplate {
         this.maxTotal = maxTotal;
         this.minIdle = minIdle;
         this.dataDir = dataDir;
+        this.executor = new ThreadPoolExecutor(minIdle, maxTotal, 5L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("derby-task");
+                return thread;
+            }
+        });
     }
 
 
@@ -78,7 +93,7 @@ public class DerbyTemplate {
     }
 
     public synchronized static DerbyTemplate createTemplate(String dataDir) throws Exception {
-        return createTemplate(DEFAULT_MAXIDLE,DEFAULT_MAXTOTAL,DEFAULT_MINIDLE,dataDir);
+        return createTemplate(DEFAULT_MAXIDLE, DEFAULT_MAXTOTAL, DEFAULT_MINIDLE, dataDir);
     }
 
 
@@ -105,7 +120,7 @@ public class DerbyTemplate {
     }
 
     private void initDB(String url) throws Exception {
-        log.info("derby url is {}",url);
+        log.info("derby url is {}", url);
         Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
         Connection conn = null;
         Statement sm = null;
@@ -126,7 +141,7 @@ public class DerbyTemplate {
             sm.execute("SET SCHEMA " + DATABASE);
             sm.execute(createTable);
         } finally {
-            if (sm != null){
+            if (sm != null) {
                 sm.close();
             }
             if (conn != null) {
@@ -167,32 +182,27 @@ public class DerbyTemplate {
     }
 
 
-    public int insertQueue(QueueModal queue) throws Exception {
+    public boolean insertQueue(QueueModal queue,boolean sync) throws Exception {
         if (queue == null) {
-            return 0;
+            return false;
         }
         String sql = "INSERT INTO QUEUE (QUEUE_ID,BROKER_NAME,QUEUE_NAME,MESSAGE) VALUES(?,?,?,?)";
-        Connection conn = pool.borrowObject();
-        PreparedStatement pstm = null;
-        try {
-            pstm = conn.prepareCall(sql);
-            pstm.setString(1,queue.getQueueId());
-            pstm.setString(2,queue.getBrokerName());
-            pstm.setString(3,queue.getQueueName());
-            pstm.setString(4,queue.getMessage());
-            boolean execute = pstm.execute();
-            if(execute){
-                return 1;
-            }
-        }finally {
-            pstm.close();
-            pool.returnObject(conn);
+        Object[] params = new Object[4];
+        params[0] = queue.getQueueId();
+        params[1] = queue.getBrokerName();
+        params[2] = queue.getQueueName();
+        params[3] = queue.getMessage();
+        DbTask task = new DbTask(sql, params);
+        Future<Boolean> future = executor.submit(task);
+        if (sync) {
+            //异步执行
+            return true;
         }
-        return 0;
+        return future.get();
     }
 
     public List<QueueModal> selectByBrokerName(String brokerName) throws Exception {
-        if (StringUtils.isBlank(brokerName)){
+        if (StringUtils.isBlank(brokerName)) {
             return new ArrayList<>();
         }
         String sql = "SELECT * FROM queue WHERE BROKER_NAME = ?";
@@ -201,7 +211,7 @@ public class DerbyTemplate {
         List<QueueModal> result = null;
         try {
             pstm = conn.prepareCall(sql);
-            pstm.setString(1,brokerName);
+            pstm.setString(1, brokerName);
             ResultSet resultSet = pstm.executeQuery();
             int size = resultSet.getFetchSize();
             result = new ArrayList<>(size);
@@ -218,7 +228,7 @@ public class DerbyTemplate {
                 queue.setQueueName(queueName);
                 result.add(queue);
             }
-        }finally {
+        } finally {
             pstm.close();
             pool.returnObject(conn);
         }
@@ -227,41 +237,86 @@ public class DerbyTemplate {
 
     /**
      * 根据brokerName 和 queueId 删除消息
+     *
      * @param brokerName
      * @param queueId
      * @throws Exception
      */
-    public void deleteByQueueIdAndBrokerName(String brokerName,String queueId) throws Exception{
+    public boolean deleteByQueueIdAndBrokerName(String brokerName, String queueId, boolean sync) throws Exception {
         String sql = "DELETE FROM queue WHERE BROKER_NAME = ? AND queueId = ?";
-        Connection conn = pool.borrowObject();
-        PreparedStatement pstm = null;
-        try {
-            pstm = conn.prepareCall(sql);
-            pstm.setString(1,brokerName);
-            pstm.setString(2,queueId);
-            pstm.execute();
-        }finally {
-            pstm.close();
-            pool.returnObject(conn);
+        Object[] params = new Object[2];
+        params[0] = brokerName;
+        params[1] = queueId;
+        DbTask task = new DbTask(sql, params);
+        Future<Boolean> future = executor.submit(task);
+        if (sync) {
+            //异步执行
+            return true;
         }
+        return future.get();
     }
 
     /**
      * 根据brokerName 删除消息
+     *
      * @param brokerName
+     * @param sync       是否同步,false 同步, true 异步
      * @throws Exception
      */
-    public void deleteByBrokerName(String brokerName) throws Exception{
+    public boolean deleteByBrokerName(String brokerName, boolean sync) throws Exception {
         String sql = "DELETE FROM queue WHERE BROKER_NAME = ?";
-        Connection conn = pool.borrowObject();
-        PreparedStatement pstm = null;
-        try {
-            pstm = conn.prepareCall(sql);
-            pstm.setString(1,brokerName);
-            pstm.execute();
-        }finally {
-            pstm.close();
-            pool.returnObject(conn);
+        Object[] params = new Object[1];
+        params[0] = brokerName;
+        DbTask task = new DbTask(sql, params);
+        Future<Boolean> future = executor.submit(task);
+        if (sync) {
+            //异步执行
+            return true;
+        }
+        return future.get();
+    }
+
+    /**
+     * sql 任务
+     */
+    class DbTask implements Callable<Boolean> {
+
+        private final Logger log = LoggerFactory.getLogger(DbTask.class);
+
+        private String sql;
+
+        private Object[] params;
+
+        DbTask(String sql, Object[] params) {
+            this.sql = sql;
+            this.params = params;
+        }
+
+        @Override
+        public Boolean call() {
+            GenericObjectPool<Connection> pool = DerbyTemplate.this.pool;
+            Connection conn = null;
+            PreparedStatement pstm = null;
+            try {
+                conn = pool.borrowObject();
+                pstm = conn.prepareCall(sql);
+                if (params != null && params.length > 0) {
+                    for (int i = 0; i < params.length; i++) {
+                        pstm.setObject((i + 1), params[i]);
+                    }
+                }
+                return pstm.execute();
+            } catch (Exception e) {
+                log.error("run sql task error", e);
+            } finally {
+                try {
+                    if (pstm != null) pstm.close();
+                } catch (SQLException e) {
+                    log.error("preparedStatement close error", e);
+                }
+                pool.returnObject(conn);
+            }
+            return false;
         }
     }
 
