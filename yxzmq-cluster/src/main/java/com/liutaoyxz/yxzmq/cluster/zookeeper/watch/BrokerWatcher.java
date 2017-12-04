@@ -1,10 +1,8 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper.watch;
 
+import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkServer;
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +37,8 @@ public class BrokerWatcher implements Watcher,AsyncCallback.ChildrenCallback{
 
                 break;
             case NodeChildrenChanged:
-
-
+                //  /yxzmq/brokers  发生变化,异步获取children
+                zk.getChildren(path,this,this,path);
                 break;
 
             default:
@@ -59,6 +57,15 @@ public class BrokerWatcher implements Watcher,AsyncCallback.ChildrenCallback{
      */
     @Override
     public void processResult(int rc, String path, Object ctx, List<String> children) {
-
+        KeeperException.Code code = KeeperException.Code.get(rc);
+        switch (code){
+            case OK:
+                // 获得到了children
+                ZkBrokerRoot.brokerChildrenChange(children);
+                break;
+            default:
+                log.warn("code not OK, code is {}",code);
+                break;
+        }
     }
 }

@@ -54,7 +54,11 @@ public class Broker implements Comparable<Broker>{
 
     @Override
     public int compareTo(Broker other) {
-        return 0;
+        String thisName = this.name;
+        String thatName = other.getName();
+        int thisSqu = Integer.valueOf(thisName.split("-")[1]);
+        int thatSqu = Integer.valueOf(thatName.split("-")[1]);
+        return thisSqu - thatSqu;
     }
 
     public String getName() {
