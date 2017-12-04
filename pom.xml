@@ -28,6 +28,7 @@
     <zookeeper.version>3.4.11</zookeeper.version>
     <derby.version>10.14.1.0</derby.version>
     <commons.pool.version>2.4.3</commons.pool.version>
+    <netty.version>4.1.17.Final</netty.version>
   </properties>
 
 
@@ -130,6 +131,11 @@
         <version>${commons.pool.version}</version>
       </dependency>
 
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-all</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
 
     </dependencies>
   </dependencyManagement>
