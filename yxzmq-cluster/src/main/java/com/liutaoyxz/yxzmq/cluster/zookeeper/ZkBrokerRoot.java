@@ -353,7 +353,6 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
 
     /**
      * 建立起来broker 之间的关系,查看自己的subject 是否变化,然后处理
-     * @param brokers
      */
     private static void connectBrokers(){
         log.debug("connectBrokers brokers {}",READY_BROKER);
