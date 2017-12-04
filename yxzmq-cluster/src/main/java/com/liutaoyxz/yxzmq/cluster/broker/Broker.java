@@ -21,12 +21,12 @@ public class Broker implements Comparable<Broker>{
     /**
      * 镜像
      */
-    private Broker mirror;
+    private String mirror;
 
     /**
      * 主体
      */
-    private Broker subject;
+    private String subject;
 
     /**
      * broker数量
@@ -74,5 +74,43 @@ public class Broker implements Comparable<Broker>{
     }
 
 
+    public int getSize() {
+        return size;
+    }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public String getMirror() {
+        return mirror;
+    }
+
+    public void setMirror(String mirror) {
+        this.mirror = mirror;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    @Override
+    public String toString() {
+        return "Broker{" +
+                "name='" + name + '\'' +
+                ", mirror='" + mirror + '\'' +
+                ", subject='" + subject + '\'' +
+                ", size=" + size +
+                ", ready=" + ready +
+                '}';
+    }
 }

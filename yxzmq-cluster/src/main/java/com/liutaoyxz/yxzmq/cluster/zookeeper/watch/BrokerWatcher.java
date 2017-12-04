@@ -21,7 +21,7 @@ public class BrokerWatcher implements Watcher,AsyncCallback.ChildrenCallback{
     public void process(WatchedEvent event) {
         ZooKeeper zk = ZkServer.getZookeeper();
         String path = event.getPath();
-        log.info("watch event,path is {},event is {}",path,event);
+        log.debug("watch event,path is {},event is {}",path,event);
         Event.EventType type = event.getType();
         Event.KeeperState state = event.getState();
         switch (type){

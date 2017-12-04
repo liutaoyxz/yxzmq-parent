@@ -117,9 +117,9 @@ public class DerbyUtilTest {
     }
 
     @Test
-    public void templeteTest() throws Exception {
-        DerbyTemplate templete = DerbyTemplate.createTemplate("/Users/liutao/yxzmqData");
-        templete.test();
+    public void templateTest() throws Exception {
+        DerbyTemplate template = DerbyTemplate.createTemplate("/Users/liutao/yxzmqData");
+        template.test();
 
     }
 
