@@ -10,3 +10,5 @@
 10  connection下的执行器遍历connection下的session,负责通知session执行任务
 11  下一步好好设计一下connection 和 socketchannel的关系,要保证每一个 consumer 和producer 都能够是一个独立的,而不是一台机器是一个
 12  实现了topic 和queue两种模式,开始优化, 先完成容错设计,然后完成集群. 其他的规范完成集群后继续
+13  实现cluster中,整体设计基本定型,完成cluster的功能后在关键点增加listener,broker和client实现listener
+14  实现数据持久化中,采用内嵌式的derby,每次启动都会删除指定目录,然后重新create
