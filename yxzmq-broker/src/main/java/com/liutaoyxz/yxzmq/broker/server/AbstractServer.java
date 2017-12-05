@@ -37,5 +37,8 @@ public abstract class AbstractServer implements Server {
         return this;
     }
 
+    @Override
+    public void connect(String host, int port) {
 
+    }
 }

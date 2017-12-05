@@ -2,6 +2,7 @@ package com.liutaoyxz.yxzmq.broker;
 
 import com.liutaoyxz.yxzmq.broker.channelhandler.DefaultChannelHandler;
 import com.liutaoyxz.yxzmq.broker.server.DefaultServer;
+import com.liutaoyxz.yxzmq.broker.server.NettyServer;
 import com.liutaoyxz.yxzmq.broker.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +17,12 @@ public class YxzmqMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(YxzmqMain.class);
 
     public static void main(String[] args) throws InterruptedException {
-        DefaultChannelHandler handler = new DefaultChannelHandler();
-        Server server = new DefaultServer(handler);
+//        DefaultChannelHandler handler = new DefaultChannelHandler();
+//        Server server = new DefaultServer(handler);
+//        server.start();
+//        LOGGER.info("start .........");
+        NettyServer server = new NettyServer();
         server.start();
-        LOGGER.info("start .........");
-
 
     }
 

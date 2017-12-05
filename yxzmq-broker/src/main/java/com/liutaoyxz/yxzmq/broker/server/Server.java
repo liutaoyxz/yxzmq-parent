@@ -23,4 +23,11 @@ public interface Server {
      * @return
      */
     Server setConfig(ServerConfig config);
+
+    /**
+     * 连接到目标地址
+     * @param host
+     * @param port
+     */
+    void connect(String host,int port) throws InterruptedException;
 }
