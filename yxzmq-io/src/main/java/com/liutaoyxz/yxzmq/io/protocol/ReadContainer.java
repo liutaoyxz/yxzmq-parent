@@ -108,6 +108,57 @@ public class ReadContainer {
     }
 
 
+    public void read(byte[] bytes){
+        for (byte b : bytes){
+            switch (this.stage){
+
+                case Stage.READ_LENGHT:
+                    //读取metadata 长度
+                    if (metadataReadPosition < METADATA_SIZE_LENGTH){
+                        //没有读满
+                        metadataLenghtBytes[metadataReadPosition++] = b;
+                        break;
+                    }
+                    //已经读满,等待生成metadata 实例
+                    metadataBytesLenght = Integer.valueOf(new String(metadataLenghtBytes, Charset.forName(DEFAULT_CHARSET)));
+                    metadataBytes = new byte[metadataBytesLenght];
+                    this.stage = Stage.READ_METADATA;
+                    metadataReadPosition = 0;
+                    break;
+                case Stage.READ_METADATA:
+                    //正在读取metadata 的序列化字节
+                    if (metadataBytesReadPosition < metadataBytesLenght){
+                        metadataBytes[metadataBytesReadPosition++] = b;
+                        break;
+                    }
+                    // 已经读满
+                    metadata = ProtostuffUtil.get(metadataBytes,Metadata.class);
+                    this.stage = Stage.READ_BEAN;
+                    metadataBytesReadPosition = 0;
+                    beanBytes = new byte[metadata.getBeanSize()];
+                    break;
+                case Stage.READ_BEAN:
+                    //正在读取ProtocolBean 的序列化字节
+                    if (beanBytesReadPosition < metadata.getBeanSize()){
+                        //没有读满
+                        beanBytes[beanBytesReadPosition++] = b;
+                        if (beanBytesReadPosition == metadata.getBeanSize()){
+                            ProtocolBean bean = ProtostuffUtil.get(beanBytes,ProtocolBean.class);
+                            log.debug("read a protocolBean {}",bean);
+                            beanQueue.add(bean);
+                            beanBytesReadPosition = 0;
+                            this.stage = Stage.READ_LENGHT;
+                        }
+                    }
+                    break;
+                default:
+                    log.error("read error,stage is {}",stage);
+                    break;
+
+            }
+        }
+    }
+
     public List<ProtocolBean> flush(){
         List<ProtocolBean> result = new ArrayList<>();
         ProtocolBean bean = beanQueue.poll();

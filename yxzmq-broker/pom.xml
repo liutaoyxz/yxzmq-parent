@@ -25,6 +25,20 @@
             <version>${parent.version}</version>
         </dependency>
 
+
+        <dependency>
+            <groupId>com.liutaoyxz.yxzmq</groupId>
+            <artifactId>yxzmq-cluster</artifactId>
+            <version>${parent.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>

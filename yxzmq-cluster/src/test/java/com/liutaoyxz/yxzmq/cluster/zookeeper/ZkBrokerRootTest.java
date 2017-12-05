@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -43,7 +42,7 @@ public class ZkBrokerRootTest {
 
     @Test
     public void stcreatart() throws Exception{
-        ZkBrokerRoot root = ZkBrokerRoot.getRoot(11179);
+        ZkBrokerRoot root = ZkBrokerRoot.getRoot(11179,null);
         root.start();
         CountDownLatch latch = new CountDownLatch(1);
         latch.await();

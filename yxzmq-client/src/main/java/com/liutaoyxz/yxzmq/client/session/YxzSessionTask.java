@@ -1,7 +1,7 @@
-package com.liutaoyxz.yxzmq.broker.client.session;
+package com.liutaoyxz.yxzmq.client.session;
 
-import com.liutaoyxz.yxzmq.broker.client.connection.YxzConnectionTask;
-import com.liutaoyxz.yxzmq.broker.client.connection.YxzDefaultConnection;
+import com.liutaoyxz.yxzmq.client.connection.YxzConnectionTask;
+import com.liutaoyxz.yxzmq.client.connection.YxzDefaultConnection;
 import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;

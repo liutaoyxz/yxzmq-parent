@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.broker.client.connection;
+package com.liutaoyxz.yxzmq.client.connection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

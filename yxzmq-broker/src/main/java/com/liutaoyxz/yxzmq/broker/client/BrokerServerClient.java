@@ -1,8 +1,14 @@
 package com.liutaoyxz.yxzmq.broker.client;
 
+import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
+import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * @author Doug Tao
@@ -10,6 +16,8 @@ import java.util.List;
  * @Description: broker 的包装对象
  */
 public class BrokerServerClient implements ServerClient{
+
+    public static final Logger log = LoggerFactory.getLogger(BrokerServerClient.class);
 
     private String id;
 
@@ -22,6 +30,10 @@ public class BrokerServerClient implements ServerClient{
     private NioSocketChannel channel;
 
     private boolean isBroker;
+
+    private ExecutorService readExecutor;
+
+    private ReadContainer readContainer;
 
     /**
      * 是否可用
@@ -39,11 +51,24 @@ public class BrokerServerClient implements ServerClient{
         this.id = channel.id().toString();
         this.channel = channel;
         this.isBroker = isBroker;
+        this.readContainer = new ReadContainer();
+        this.readExecutor = new ThreadPoolExecutor(1, 1, 5L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("server-client-read-task-"+id);
+                return thread;
+            }
+        });
     }
 
     @Override
     public boolean write(List<byte[]> bytes, boolean sync) {
-        return false;
+        for (byte[] b : bytes){
+            channel.writeAndFlush(b);
+        }
+        return true;
     }
 
     @Override
@@ -52,8 +77,22 @@ public class BrokerServerClient implements ServerClient{
     }
 
     @Override
+    public void read(byte[] bytes) {
+        this.readContainer.read(bytes);
+        List<ProtocolBean> beans = this.readContainer.flush();
+        if (beans.size() > 0){
+            log.info("read beans :{}",beans);
+        }
+    }
+
+    @Override
     public String name() {
         return this.name;
+    }
+
+    @Override
+    public String id() {
+        return this.id;
     }
 
     @Override
@@ -74,6 +113,28 @@ public class BrokerServerClient implements ServerClient{
     @Override
     public boolean available() {
         return available;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (channel != null && channel.isActive()){
+            channel.close();
+        }
+    }
+
+    @Override
+    public void setIsBroker(boolean isBroker) {
+        this.isBroker = isBroker;
+    }
+
+    @Override
+    public void ready() {
+        this.available = true;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override

@@ -2,11 +2,8 @@ package com.liutaoyxz.yxzmq.broker.server;
 
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Doug Tao
@@ -16,14 +13,10 @@ import static org.junit.Assert.*;
 public class NettyServerTest {
     @Test
     public void start() throws Exception {
-        NettyServer server = new NettyServer();
+        NettyServer server = NettyServer.getServer();
         server.start();
-        server.connect("127.0.0.1",11171);
-        server.connect("127.0.0.1",11171);
-        server.connect("127.0.0.1",11171);
-        server.connect("127.0.0.1",11171);
-        server.connect("127.0.0.1",11171);
-        Thread.sleep(100000);
+
+        Thread.sleep(1000000);
 
     }
 

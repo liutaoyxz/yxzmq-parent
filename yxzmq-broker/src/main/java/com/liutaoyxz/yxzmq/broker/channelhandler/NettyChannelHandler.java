@@ -1,18 +1,15 @@
 package com.liutaoyxz.yxzmq.broker.channelhandler;
 
-import com.liutaoyxz.yxzmq.broker.client.BrokerServerClient;
 import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 import com.liutaoyxz.yxzmq.broker.client.ServerClientManager;
-import com.liutaoyxz.yxzmq.broker.server.Server;
-import io.netty.channel.*;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.SocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Doug Tao
@@ -77,8 +74,11 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, byte[] msg) throws Exception {
-        byte[] bytes = (byte[]) msg;
-        log.info("channel read,msg is {}", Arrays.toString(bytes));
+        log.info("read msg {}", Arrays.toString(msg));
+        Channel channel = ctx.channel();
+        String id = channel.id().toString();
+        ServerClientManager.getServerClient(id).read(msg);
+
     }
 
     /**

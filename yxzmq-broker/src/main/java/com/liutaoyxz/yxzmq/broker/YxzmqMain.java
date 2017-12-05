@@ -1,9 +1,6 @@
 package com.liutaoyxz.yxzmq.broker;
 
-import com.liutaoyxz.yxzmq.broker.channelhandler.DefaultChannelHandler;
-import com.liutaoyxz.yxzmq.broker.server.DefaultServer;
 import com.liutaoyxz.yxzmq.broker.server.NettyServer;
-import com.liutaoyxz.yxzmq.broker.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,8 +18,9 @@ public class YxzmqMain {
 //        Server server = new DefaultServer(handler);
 //        server.start();
 //        LOGGER.info("start .........");
-        NettyServer server = new NettyServer();
+        NettyServer server = NettyServer.getServer();
         server.start();
+
 
     }
 

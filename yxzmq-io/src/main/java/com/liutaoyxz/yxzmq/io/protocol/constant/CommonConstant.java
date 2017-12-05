@@ -42,6 +42,11 @@ public interface CommonConstant {
          */
         int QUEUE_LISTEN = 6;
 
+        /**
+         * broker subject 注册到这里
+         */
+        int BROKER_SUBJECT_REGISTER = 7;
+
     }
 
     /**

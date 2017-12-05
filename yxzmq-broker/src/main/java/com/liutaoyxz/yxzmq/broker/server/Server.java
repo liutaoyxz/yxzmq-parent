@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.server;
 
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
+import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 
 /**
  * broker server
@@ -29,5 +30,5 @@ public interface Server {
      * @param host
      * @param port
      */
-    void connect(String host,int port) throws InterruptedException;
+    ServerClient connect(String host, int port) throws InterruptedException;
 }

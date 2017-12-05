@@ -35,6 +35,10 @@ public interface BrokerListener {
      */
     void queueListenersChange(String queueName,List<String> listeners);
 
-
+    /**
+     * 设置我自己在zookeeper的名字
+     * @param myName
+     */
+    void setMyName(String myName);
 
 }

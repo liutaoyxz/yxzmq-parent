@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.broker.client.connection;
+package com.liutaoyxz.yxzmq.client.connection;
 
 import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;

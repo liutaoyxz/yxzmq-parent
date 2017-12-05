@@ -3,12 +3,17 @@ package com.liutaoyxz.yxzmq.broker.server;
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
 import com.liutaoyxz.yxzmq.broker.channelhandler.NettyChannelHandler;
 import com.liutaoyxz.yxzmq.broker.channelhandler.NettyClientChannelHandler;
-import com.liutaoyxz.yxzmq.broker.client.BrokerServerClient;
+import com.liutaoyxz.yxzmq.broker.client.BrokerZkListener;
 import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 import com.liutaoyxz.yxzmq.broker.client.ServerClientManager;
+import com.liutaoyxz.yxzmq.cluster.zookeeper.BrokerListener;
+import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -37,6 +42,8 @@ public class NettyServer implements Server,Runnable {
 
     private CountDownLatch serverStartCountDown = new CountDownLatch(1);
 
+    private static NettyServer server;
+
     private ExecutorService serverExecutor = new ThreadPoolExecutor(1, 1, 5L,
             TimeUnit.DAYS, new LinkedBlockingQueue<>(), new ThreadFactory() {
         @Override
@@ -47,11 +54,24 @@ public class NettyServer implements Server,Runnable {
         }
     });
 
+    private NettyServer() {
+    }
+
+    public synchronized static NettyServer getServer(){
+        if (server == null){
+            server = new NettyServer();
+        }
+        return server;
+    }
+
     @Override
     public void start() {
         serverExecutor.execute(this);
         try {
             serverStartCountDown.await();
+            BrokerListener listener = new BrokerZkListener();
+            ZkBrokerRoot root = ZkBrokerRoot.getRoot(config.getPort(), listener);
+            root.start();
         } catch (InterruptedException e) {
             log.error("server start error",e);
         }
@@ -113,9 +133,10 @@ public class NettyServer implements Server,Runnable {
     }
 
     @Override
-    public void connect(String host, int port) throws InterruptedException {
+    public ServerClient connect(String host, int port) throws InterruptedException {
         bootstrap.handler(new NettyClientChannelHandler());
         NioSocketChannel channel = (NioSocketChannel) bootstrap.connect(host, port).sync().channel();
-        ServerClientManager.addClient(channel);
+        ServerClient client = ServerClientManager.addClient(channel);
+        return client;
     }
 }

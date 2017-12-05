@@ -1,8 +1,8 @@
-package com.liutaoyxz.yxzmq.broker.client.connection;
+package com.liutaoyxz.yxzmq.client.connection;
 
-import com.liutaoyxz.yxzmq.broker.client.session.YxzDefaultSession;
-import com.liutaoyxz.yxzmq.broker.client.session.YxzQueueConsumer;
-import com.liutaoyxz.yxzmq.broker.client.session.YxzTextMessage;
+import com.liutaoyxz.yxzmq.client.session.YxzDefaultSession;
+import com.liutaoyxz.yxzmq.client.session.YxzQueueConsumer;
+import com.liutaoyxz.yxzmq.client.session.YxzTextMessage;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;

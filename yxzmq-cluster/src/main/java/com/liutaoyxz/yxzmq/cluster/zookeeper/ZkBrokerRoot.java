@@ -55,16 +55,23 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
 
     private int port;
 
-    private ZkBrokerRoot(int port) {
+    private BrokerListener listener;
+
+    private ZkBrokerRoot(int port,BrokerListener listener) {
         this.port = port;
+        this.listener = listener;
     }
 
     public static ZkBrokerRoot root;
 
-    public synchronized static ZkBrokerRoot getRoot(int port){
+    public synchronized static ZkBrokerRoot getRoot(int port,BrokerListener listener){
         if (root == null){
-            root = new ZkBrokerRoot(port);
+            root = new ZkBrokerRoot(port,listener);
         }
+        return root;
+    }
+
+    public synchronized static ZkBrokerRoot getRoot(){
         return root;
     }
 
@@ -308,7 +315,7 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
      * @param children
      */
     public static void brokerChildrenChange(List<String> children) {
-        log.debug("brokerChildren change,children is {}", children);
+        log.info("brokerChildren change,children is {}", children);
         ZooKeeper zk = ZkServer.getZookeeper();
         try {
             ALL_BROKER.clear();
@@ -422,6 +429,8 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
         }else if (!StringUtils.equals(self.getMirror(),_self.getMirror())){
             // mirror 改变 todo
             log.info("notify broker new mirror is {}",_self.getMirror());
+            ZkBrokerRoot root = ZkBrokerRoot.getRoot();
+            root.listener.mirrorChange(_self.getMirror());
             self.setMirror(_self.getMirror());
         }
 

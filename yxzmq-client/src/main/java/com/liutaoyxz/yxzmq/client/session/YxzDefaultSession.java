@@ -1,6 +1,6 @@
-package com.liutaoyxz.yxzmq.broker.client.session;
+package com.liutaoyxz.yxzmq.client.session;
 
-import com.liutaoyxz.yxzmq.broker.client.connection.YxzDefaultConnection;
+import com.liutaoyxz.yxzmq.client.connection.YxzDefaultConnection;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

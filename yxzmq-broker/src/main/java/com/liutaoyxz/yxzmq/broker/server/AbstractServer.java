@@ -2,6 +2,7 @@ package com.liutaoyxz.yxzmq.broker.server;
 
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
+import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
 import org.slf4j.Logger;
 
@@ -38,7 +39,9 @@ public abstract class AbstractServer implements Server {
     }
 
     @Override
-    public void connect(String host, int port) {
-
+    public ServerClient connect(String host, int port) {
+        return null;
     }
+
+
 }
