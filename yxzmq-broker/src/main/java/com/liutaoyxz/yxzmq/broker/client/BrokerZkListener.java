@@ -41,6 +41,6 @@ public class BrokerZkListener implements BrokerListener {
 
     @Override
     public void setMyName(String myName) {
-
+        ServerClientManager.setMyName(myName);
     }
 }
