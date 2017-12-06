@@ -37,13 +37,14 @@ public class ServerClientManager {
 
     /**
      * 增加一个连接
+     *
      * @param channel
      * @return
      */
-    public static ServerClient addClient(NioSocketChannel channel){
+    public static ServerClient addClient(NioSocketChannel channel) {
         String id = channel.id().toString();
         BrokerServerClient client = new BrokerServerClient(channel);
-        ID_CLIENT.put(id,client);
+        ID_CLIENT.put(id, client);
         return client;
     }
 
@@ -59,7 +60,7 @@ public class ServerClientManager {
     public synchronized static void setMirror(String mirrorName) throws InterruptedException {
         NettyServer server = NettyServer.getServer();
         String[] strings = StringUtils.split(mirrorName, "-");
-        String[] ss = StringUtils.split(strings[0],":");
+        String[] ss = StringUtils.split(strings[0], ":");
         String hostName = ss[0];
         int port = Integer.valueOf(ss[1]);
         ServerClient client = server.connect(hostName, port);
@@ -72,15 +73,15 @@ public class ServerClientManager {
         bean.setGroupId(myName);
         bean.setCommand(CommonConstant.Command.BROKER_SUBJECT_REGISTER);
         List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
-        client.write(bytes,false);
+        client.write(bytes, false);
         ServerClientManager.mirrorId = client.id();
     }
 
-    public static void setMyName(String myName){
+    public static void setMyName(String myName) {
         ServerClientManager.myName = myName;
     }
 
-    public static ServerClient getServerClient(String id){
+    public static ServerClient getServerClient(String id) {
         return ID_CLIENT.get(id);
     }
 

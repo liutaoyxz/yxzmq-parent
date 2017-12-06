@@ -20,6 +20,10 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
+import io.netty.handler.codec.protobuf.ProtobufEncoder;
+import io.netty.handler.codec.serialization.ClassResolvers;
+import io.netty.handler.codec.serialization.ObjectDecoder;
+import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +96,17 @@ public class NettyServer implements Server,Runnable {
             bootstrap = new Bootstrap();
             bootstrap.group(clientEvent);
             bootstrap.channel(NioSocketChannel.class);
+            bootstrap.option(ChannelOption.SO_KEEPALIVE,true);
+//            bootstrap.handler(new ByteArrayEncoder());
+            bootstrap.handler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                protected void initChannel(SocketChannel ch) throws Exception {
+                    ch.pipeline()
+                            .addLast(new ByteArrayEncoder())
+                            .addLast(new ByteArrayDecoder())
+                            .addLast(new NettyClientChannelHandler());
+                }
+            });
             log.info("broker client started...");
             try {
                 //启动server
@@ -102,8 +117,9 @@ public class NettyServer implements Server,Runnable {
                             @Override
                             protected void initChannel(SocketChannel ch) throws Exception {
                                 ch.config().setAutoRead(true);
-                                ch.pipeline().addLast(new ByteArrayDecoder())
+                                ch.pipeline()
                                         .addLast(new ByteArrayEncoder())
+                                        .addLast(new ByteArrayDecoder())
                                         .addLast(new NettyChannelHandler());
                             }
                         }).option(ChannelOption.SO_BACKLOG, 128)
@@ -135,7 +151,9 @@ public class NettyServer implements Server,Runnable {
     @Override
     public ServerClient connect(String host, int port) throws InterruptedException {
         bootstrap.handler(new NettyClientChannelHandler());
-        NioSocketChannel channel = (NioSocketChannel) bootstrap.connect(host, port).sync().channel();
+        ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
+        NioSocketChannel channel = (NioSocketChannel) channelFuture.channel();
+//        channelFuture.channel().closeFuture().sync();
         ServerClient client = ServerClientManager.addClient(channel);
         return client;
     }

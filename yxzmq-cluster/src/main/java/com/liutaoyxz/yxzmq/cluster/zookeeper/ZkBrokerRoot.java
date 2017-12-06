@@ -329,6 +329,7 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
                     String dataStr = new String(data, Charset.forName("utf-8"));
                     if (StringUtils.equals(ZkConstant.BrokerState.NOT_READY, dataStr)) {
                         //没准备好
+                        log.info("{} not ready",path);
                         Broker broker = new Broker(child);
                         ALL_BROKER.put(child, broker);
                     } else if (StringUtils.equals(ZkConstant.BrokerState.READY, dataStr)) {
@@ -357,6 +358,17 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
 
 
     }
+
+    /**
+     * broker 状态为ready,添加到ready 列表,重新建立关系
+     */
+    public static void brokerReady(String brokerName){
+        Broker broker = ALL_BROKER.get(brokerName);
+        broker.ready();
+        READY_BROKER.add(broker);
+        connectBrokers();
+    }
+
 
     /**
      * 建立起来broker 之间的关系,查看自己的subject 是否变化,然后处理

@@ -2,6 +2,11 @@ package com.liutaoyxz.yxzmq.broker.client;
 
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +20,7 @@ import java.util.concurrent.*;
  * @Date: 11:22 2017/12/5
  * @Description: broker 的包装对象
  */
-public class BrokerServerClient implements ServerClient{
+public class BrokerServerClient implements ServerClient {
 
     public static final Logger log = LoggerFactory.getLogger(BrokerServerClient.class);
 
@@ -42,11 +47,11 @@ public class BrokerServerClient implements ServerClient{
 
 
     public BrokerServerClient(NioSocketChannel channel) {
-        this(channel,false);
+        this(channel, false);
     }
 
-    public BrokerServerClient(NioSocketChannel channel,boolean isBroker){
-        this.remoteAddress = channel.remoteAddress().getHostName();
+    public BrokerServerClient(NioSocketChannel channel, boolean isBroker) {
+        this.remoteAddress = channel.remoteAddress().getAddress().getHostAddress();
         this.port = channel.remoteAddress().getPort();
         this.id = channel.id().toString();
         this.channel = channel;
@@ -57,17 +62,27 @@ public class BrokerServerClient implements ServerClient{
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
-                thread.setName("server-client-read-task-"+id);
+                thread.setName("server-client-read-task-" + id);
                 return thread;
             }
         });
     }
 
     @Override
-    public boolean write(List<byte[]> bytes, boolean sync) {
-        for (byte[] b : bytes){
-            channel.writeAndFlush(b);
+    public boolean write(List<byte[]> bytes, boolean sync) throws InterruptedException {
+        int length = 0;
+        for (byte[] b : bytes) {
+            length += b.length;
         }
+        ByteBuf buf = channel.alloc().buffer(length);
+        for (byte[] b : bytes) {
+            buf.writeBytes(b);
+        }
+        ChannelFuture future = channel.writeAndFlush(buf);
+        if (sync) {
+            future.sync();
+        }
+        log.info("future {}", future);
         return true;
     }
 
@@ -80,9 +95,7 @@ public class BrokerServerClient implements ServerClient{
     public void read(byte[] bytes) {
         this.readContainer.read(bytes);
         List<ProtocolBean> beans = this.readContainer.flush();
-        if (beans.size() > 0){
-            log.info("read beans :{}",beans);
-        }
+        log.info("read beans :{}", beans);
     }
 
     @Override
@@ -102,12 +115,12 @@ public class BrokerServerClient implements ServerClient{
 
     @Override
     public String remoteAddress() {
-        return null;
+        return this.remoteAddress;
     }
 
     @Override
     public int remotePort() {
-        return 0;
+        return this.port;
     }
 
     @Override
@@ -117,7 +130,7 @@ public class BrokerServerClient implements ServerClient{
 
     @Override
     public void close() throws IOException {
-        if (channel != null && channel.isActive()){
+        if (channel != null && channel.isActive()) {
             channel.close();
         }
     }

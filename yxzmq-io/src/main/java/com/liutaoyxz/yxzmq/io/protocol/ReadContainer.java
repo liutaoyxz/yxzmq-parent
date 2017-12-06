@@ -109,7 +109,8 @@ public class ReadContainer {
 
 
     public void read(byte[] bytes){
-        for (byte b : bytes){
+        for (int i = 0; i < bytes.length;) {
+            byte b = bytes[i];
             switch (this.stage){
 
                 case Stage.READ_LENGHT:
@@ -117,6 +118,7 @@ public class ReadContainer {
                     if (metadataReadPosition < METADATA_SIZE_LENGTH){
                         //没有读满
                         metadataLenghtBytes[metadataReadPosition++] = b;
+                        i++;
                         break;
                     }
                     //已经读满,等待生成metadata 实例
@@ -129,6 +131,7 @@ public class ReadContainer {
                     //正在读取metadata 的序列化字节
                     if (metadataBytesReadPosition < metadataBytesLenght){
                         metadataBytes[metadataBytesReadPosition++] = b;
+                        i++;
                         break;
                     }
                     // 已经读满
@@ -142,6 +145,7 @@ public class ReadContainer {
                     if (beanBytesReadPosition < metadata.getBeanSize()){
                         //没有读满
                         beanBytes[beanBytesReadPosition++] = b;
+                        i++;
                         if (beanBytesReadPosition == metadata.getBeanSize()){
                             ProtocolBean bean = ProtostuffUtil.get(beanBytes,ProtocolBean.class);
                             log.debug("read a protocolBean {}",bean);

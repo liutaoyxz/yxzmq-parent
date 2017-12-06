@@ -17,7 +17,7 @@ public interface ServerClient extends Closeable {
      * @param sync 是否异步,true 同步,false 异步
      * @return 成功或者失败
      */
-    boolean write(List<byte[]> bytes,boolean sync);
+    boolean write(List<byte[]> bytes,boolean sync) throws InterruptedException;
 
     /**
      * 读数据

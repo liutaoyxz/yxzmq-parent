@@ -2,6 +2,7 @@ package com.liutaoyxz.yxzmq.broker.channelhandler;
 
 import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 import com.liutaoyxz.yxzmq.broker.client.ServerClientManager;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -9,7 +10,9 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Doug Tao
@@ -29,7 +32,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
      */
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        super.channelRegistered(ctx);
+
     }
 
     /**
@@ -40,7 +43,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
      */
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        super.channelUnregistered(ctx);
+
         NioSocketChannel channel = (NioSocketChannel) ctx.channel();
         ServerClient client = ServerClientManager.delClient(channel);
     }
@@ -53,7 +56,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
      */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        super.channelActive(ctx);
+
         NioSocketChannel channel = (NioSocketChannel) ctx.channel();
         ServerClient client = ServerClientManager.addClient(channel);
         log.info("new client connect,client is {}",client);
@@ -68,7 +71,11 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        super.channelRead(ctx, msg);
+        log.info("channelRead {}",msg);
+        byte[] bytes = (byte[]) msg;
+        Channel channel = ctx.channel();
+        String id = channel.id().toString();
+        ServerClientManager.getServerClient(id).read(bytes);
     }
 
 
@@ -89,18 +96,18 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
      */
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        super.channelReadComplete(ctx);
+
         log.info("channelReadComplete");
     }
 
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-        super.channelWritabilityChanged(ctx);
+
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
+        log.error("netty error",cause);
     }
 
 
