@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper.watch;
 
+import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkServer;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.callback.QueueCallback;
@@ -48,7 +49,15 @@ public class QueueWatcher implements Watcher {
             case None:
                 //连接状态发生变化,此时path 是null
                 log.warn("connect state change,state is {}",state);
-                zk.getChildren(ZkConstant.Path.QUEUES, this, callback, ZkConstant.Path.QUEUES);
+                switch (state){
+                    case Expired:
+                        log.info("zookeeper expired,restart zookeeper");
+                        ZkBrokerRoot.restart(ZkServer.getZkVersion());
+                        break;
+                    default:
+                        zk.getChildren(ZkConstant.Path.QUEUES, this, callback, ZkConstant.Path.QUEUES);
+                        break;
+                }
                 break;
             case NodeDeleted:
                 //   /yxzmq/queues 节点被删除,不应该出现

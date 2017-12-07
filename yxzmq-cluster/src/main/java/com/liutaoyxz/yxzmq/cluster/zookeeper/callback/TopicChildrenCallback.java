@@ -87,8 +87,8 @@ public class TopicChildrenCallback implements AsyncCallback.ChildrenCallback, Wa
                 log.warn("path [{}] watch state change,state is {}",path,state);
                 switch (state){
                     case Expired:
-                        //连接过期,重新创建zookeeper对象,重新连接到集群
-                        ZkBrokerRoot.restart();
+                        log.info("zookeeper expired,restart zookeeper");
+                        ZkBrokerRoot.restart(ZkServer.getZkVersion());
                     default:
                         zk.getChildren(path, this, this, path);
                         break;

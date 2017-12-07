@@ -1,6 +1,5 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper;
 
-import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -8,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Doug Tao
@@ -26,6 +25,8 @@ public class ZkServer {
 
     public static final Logger log = LoggerFactory.getLogger(ZkServer.class);
 
+    private static AtomicInteger zkVersion = new AtomicInteger(1);
+
     public static ZooKeeper getZookeeper(){
         if (zooKeeper == null){
             synchronized (ZkServer.class){
@@ -41,21 +42,27 @@ public class ZkServer {
         return zooKeeper;
     }
 
-    public static void reCreateZookeeper(){
+    public static int reCreateZookeeper(){
         synchronized (ZkServer.class){
             try {
                 if (zooKeeper != null){
                     zooKeeper.close();
                 }
                 zooKeeper = new ZooKeeper(connectStr,timeout,new ServerWatcher());
+                zkVersion.incrementAndGet();
             } catch (IOException e) {
                 log.info("create zookeeper error",e);
             } catch (InterruptedException e) {
                 log.info("create zookeeper error",e);
             }
+            return zkVersion.get();
         }
     }
 
+
+    public static int getZkVersion(){
+        return zkVersion.get();
+    }
 
     /**
      * 启动

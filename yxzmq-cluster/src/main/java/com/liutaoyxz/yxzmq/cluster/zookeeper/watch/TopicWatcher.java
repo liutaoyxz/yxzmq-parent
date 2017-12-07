@@ -1,10 +1,13 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper.watch;
 
+import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkServer;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.callback.TopicCallback;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.callback.TopicChildrenCallback;
-import org.apache.zookeeper.*;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,38 +40,30 @@ public class TopicWatcher implements Watcher {
         Event.EventType type = event.getType();
         Event.KeeperState state = event.getState();
         ZooKeeper zk = ZkServer.getZookeeper();
-        switch (state) {
-            case Disconnected:
-                //失去连接
-                log.warn("watch topics,state is Disconnected");
-                break;
-            case Expired:
-                //连接过期
-                log.warn("watch topics,state is Expired");
-                break;
-            default:
-                log.info("watch topics,state is {}", state);
-                break;
-        }
+
         switch (type) {
             case NodeChildrenChanged:
                 //子节点变化
                 log.info("topics childrenChanged,path is {}", path);
                 zk.getChildren(ZkConstant.Path.TOPICS, this, callback, path);
                 break;
-//            case NodeDeleted:
-//                //   /yxzmq/topics 节点被删除,不应该出现
-//                break;
-//
-//            case NodeCreated:
-//                //  /yxzmq/topics 节点被创建,也不应该出现
-//                break;
-//            case NodeDataChanged:
-//                //  /yxzmq/topics 节点数据发生变化, 不应该出现
-//
-//                break;
+
+            case None:
+                log.warn("watch topics,state change,state is {}",state);
+                switch (state) {
+                    case Expired:
+                        //连接过期
+                        log.info("zookeeper expired,restart zookeeper");
+                        ZkBrokerRoot.restart(ZkServer.getZkVersion());
+                        break;
+                    default:
+                        zk.getChildren(ZkConstant.Path.TOPICS, this, callback, path);
+                        break;
+                }
+                break;
             default:
                 log.warn("topics watch type is not hit,type is {}", type);
+                zk.getChildren(ZkConstant.Path.TOPICS, this, callback, path);
                 break;
         }
 

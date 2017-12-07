@@ -47,6 +47,7 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
      */
     private static final ConcurrentHashMap<String, Broker> ALL_BROKER = new ConcurrentHashMap<>();
 
+    private static int zkVersion = 1;
 
     /**
      * 本机的broker对象
@@ -211,10 +212,13 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
     /**
      * 连接过期后重启zookeeper 并且重新
      */
-    public static void restart(){
+    public static void restart(int version){
         restartLock.lock();
+        if (version < zkVersion){
+            return;
+        }
         try {
-            ZkServer.reCreateZookeeper();
+            zkVersion = ZkServer.reCreateZookeeper();
             ZkBrokerRoot.root.start();
         } catch (InterruptedException e) {
             log.error("restart zookeeper error",e);

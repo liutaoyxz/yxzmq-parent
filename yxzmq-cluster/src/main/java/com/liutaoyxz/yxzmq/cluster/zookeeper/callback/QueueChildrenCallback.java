@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper.callback;
 
+import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkServer;
 import org.apache.zookeeper.*;
@@ -72,12 +73,24 @@ public class QueueChildrenCallback implements AsyncCallback.ChildrenCallback, Wa
         log.info("watch event path is {}", path);
         Event.EventType type = event.getType();
         Event.KeeperState state = event.getState();
-        log.info("type is {},continue watch for topic {}", type, this.queueName);
+        log.info("type is {},continue watch for queue {}", type, this.queueName);
         switch (type){
             case None:
                 //连接状态发生变化
                 log.warn("path [{}] watch state change,state is {}",path,state);
-                zk.getChildren(path, this, this, path);
+                switch (state){
+                    case Expired:
+                        log.info("zookeeper expired,restart zookeeper");
+                        ZkBrokerRoot.restart(ZkServer.getZkVersion());
+                        break;
+                    case Disconnected:
+                        zk.getChildren(path, this, this, path);
+                        break;
+                    default:
+                        log.warn("watch queue [{}] state is {}",this.queueName,state);
+                        zk.getChildren(path, this, this, path);
+                        break;
+                }
                 break;
             case NodeChildrenChanged:
                 //queue 下面的订阅者发生变化
