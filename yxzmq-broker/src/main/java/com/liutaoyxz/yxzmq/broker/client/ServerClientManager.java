@@ -56,8 +56,16 @@ public class ServerClientManager {
         return client;
     }
 
-
-    public synchronized static void setMirror(String mirrorName) throws InterruptedException {
+    /**
+     * mirror 发生变化
+     * @param mirrorName
+     * @throws InterruptedException
+     */
+    public synchronized static void setMirror(String mirrorName) throws InterruptedException, IOException {
+        if (StringUtils.isNotBlank(ServerClientManager.mirrorId)){
+            ServerClient mirrorClient = ID_CLIENT.get(mirrorId);
+            mirrorClient.close();
+        }
         NettyServer server = NettyServer.getServer();
         String[] strings = StringUtils.split(mirrorName, "-");
         String[] ss = StringUtils.split(strings[0], ":");
@@ -76,6 +84,27 @@ public class ServerClientManager {
         client.write(bytes, false);
         ServerClientManager.mirrorId = client.id();
     }
+
+    /**
+     * 由主体发送消息进行通知
+     * 主体发生了变化,通知derby将之前的subject  数据存储到内存,替换subject
+     * @param newSubjectId 新的subjectId
+     */
+    public synchronized static void subjectChange(String newSubjectId){
+        String oldSubjectId = ServerClientManager.subjectId;
+        if (StringUtils.isBlank(oldSubjectId)){
+            //之前没有subject
+            ServerClientManager.subjectId = newSubjectId;
+            return ;
+        }
+        ServerClient client = ID_CLIENT.get(oldSubjectId);
+        String oldSubjectName = client.name();
+        //todo 通知derby,之前的subject 换了,把数据库中的数据读出来
+
+
+    }
+
+
 
     public static void setMyName(String myName) {
         ServerClientManager.myName = myName;

@@ -39,36 +39,28 @@ public class QueueWatcher implements Watcher {
         Event.EventType type = event.getType();
         Event.KeeperState state = event.getState();
         ZooKeeper zk = ZkServer.getZookeeper();
-        switch (state) {
-            case Disconnected:
-                //失去连接
-                log.warn("watch queues,state is Disconnected");
-                break;
-            case Expired:
-                //连接过期
-                log.warn("watch queues,state is Expired");
-                break;
-            default:
-                log.info("watch queues,state is {}", state);
-                break;
-        }
         switch (type) {
             case NodeChildrenChanged:
                 //子节点变化
                 log.info("queues childrenChanged,path is {}", path);
-                zk.getChildren(ZkConstant.Path.QUEUES, this, callback, path);
+                zk.getChildren(ZkConstant.Path.QUEUES, this, callback, ZkConstant.Path.QUEUES);
                 break;
-//            case NodeDeleted:
-//                //   /yxzmq/queues 节点被删除,不应该出现
-//                break;
-//
-//            case NodeCreated:
-//                //  /yxzmq/queues 节点被创建,也不应该出现
-//                break;
-//            case NodeDataChanged:
-//                //  /yxzmq/queues 节点数据发生变化, 不应该出现
-//
-//                break;
+            case None:
+                //连接状态发生变化,此时path 是null
+                log.warn("connect state change,state is {}",state);
+                zk.getChildren(ZkConstant.Path.QUEUES, this, callback, ZkConstant.Path.QUEUES);
+                break;
+            case NodeDeleted:
+                //   /yxzmq/queues 节点被删除,不应该出现
+                break;
+
+            case NodeCreated:
+                //  /yxzmq/queues 节点被创建,也不应该出现
+                break;
+            case NodeDataChanged:
+                //  /yxzmq/queues 节点数据发生变化, 不应该出现
+
+                break;
             default:
                 log.warn("queues watch type is not hit,type is {}", type);
                 break;

@@ -61,7 +61,7 @@ public class QueueCallback implements AsyncCallback.ChildrenCallback {
             case CONNECTIONLOSS:
                 //连接错误,继续尝试,此时path 是null
                 log.warn("get queues children CONNECTIONLOSS,path is {}",path);
-                zk.exists(ZkConstant.Path.QUEUES, watcher, null, ctx);
+                zk.getChildren(ZkConstant.Path.QUEUES, watcher, this, ctx);
                 break;
 
             case NONODE:

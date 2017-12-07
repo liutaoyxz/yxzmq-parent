@@ -41,6 +41,22 @@ public class ZkServer {
         return zooKeeper;
     }
 
+    public static void reCreateZookeeper(){
+        synchronized (ZkServer.class){
+            try {
+                if (zooKeeper != null){
+                    zooKeeper.close();
+                }
+                zooKeeper = new ZooKeeper(connectStr,timeout,new ServerWatcher());
+            } catch (IOException e) {
+                log.info("create zookeeper error",e);
+            } catch (InterruptedException e) {
+                log.info("create zookeeper error",e);
+            }
+        }
+    }
+
+
     /**
      * 启动
      */

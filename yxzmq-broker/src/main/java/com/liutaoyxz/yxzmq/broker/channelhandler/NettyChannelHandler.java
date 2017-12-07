@@ -71,7 +71,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        log.info("channelRead {}",msg);
+        log.debug("channelRead {}",msg);
         byte[] bytes = (byte[]) msg;
         Channel channel = ctx.channel();
         String id = channel.id().toString();

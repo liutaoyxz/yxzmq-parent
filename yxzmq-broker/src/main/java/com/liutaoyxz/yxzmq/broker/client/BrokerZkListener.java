@@ -4,6 +4,7 @@ import com.liutaoyxz.yxzmq.cluster.zookeeper.BrokerListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -25,6 +26,8 @@ public class BrokerZkListener implements BrokerListener {
         try {
             ServerClientManager.setMirror(mirrorName);
         } catch (InterruptedException e) {
+            log.error("set mirrorName error",e);
+        } catch (IOException e) {
             log.error("set mirrorName error",e);
         }
     }

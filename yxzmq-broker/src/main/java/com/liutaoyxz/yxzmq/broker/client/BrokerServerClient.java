@@ -131,6 +131,7 @@ public class BrokerServerClient implements ServerClient {
     @Override
     public void close() throws IOException {
         if (channel != null && channel.isActive()) {
+            this.available = false;
             channel.close();
         }
     }

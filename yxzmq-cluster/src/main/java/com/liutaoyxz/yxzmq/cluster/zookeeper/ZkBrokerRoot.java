@@ -35,7 +35,7 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
     /**
      * broker 锁,更新broker和镜像同步信息时需要获得锁
      */
-    private ReentrantLock brokerLock = new ReentrantLock();
+    private static ReentrantLock restartLock = new ReentrantLock();
 
     /**
      * ready 的broker列表
@@ -62,7 +62,7 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
         this.listener = listener;
     }
 
-    public static ZkBrokerRoot root;
+    private static ZkBrokerRoot root;
 
     public synchronized static ZkBrokerRoot getRoot(int port,BrokerListener listener){
         if (root == null){
@@ -70,6 +70,8 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
         }
         return root;
     }
+
+    private volatile boolean starting = false;
 
     public synchronized static ZkBrokerRoot getRoot(){
         return root;
@@ -171,14 +173,14 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
 
     @Override
     public void start() throws InterruptedException {
-        checkRoot();
-        ZooKeeper zk = ZkServer.getZookeeper();
-
-        TopicWatcher topicWatch = TopicWatcher.getWatcher();
-        QueueWatcher queueWatcher = QueueWatcher.getWatcher();
-        BrokerWatcher brokerWatcher = new BrokerWatcher();
-        //getChildren 采用同步等待
         try {
+            checkRoot();
+            ZooKeeper zk = ZkServer.getZookeeper();
+
+            TopicWatcher topicWatch = TopicWatcher.getWatcher();
+            QueueWatcher queueWatcher = QueueWatcher.getWatcher();
+            BrokerWatcher brokerWatcher = new BrokerWatcher();
+            //getChildren 采用同步等待
             //遍历topics
             List<String> topicChildren = zk.getChildren(ZkConstant.Path.TOPICS, topicWatch);
             log.info("topics children {}", topicChildren);
@@ -194,13 +196,33 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
             createBrokers(brokerChildren);
             register();
             ready();
+            this.starting = false;
         } catch (KeeperException.ConnectionLossException e) {
             log.info("connection loss", e);
         } catch (KeeperException e) {
             log.info("get children error", e);
+        }finally {
+
+
         }
 
     }
+
+    /**
+     * 连接过期后重启zookeeper 并且重新
+     */
+    public static void restart(){
+        restartLock.lock();
+        try {
+            ZkServer.reCreateZookeeper();
+            ZkBrokerRoot.root.start();
+        } catch (InterruptedException e) {
+            log.error("restart zookeeper error",e);
+        }finally {
+            restartLock.unlock();
+        }
+    }
+
 
     /**
      * 设置broker的状态为ready,同步
@@ -416,7 +438,7 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
         String newSubject = null;
         String newMirror = null;
         if (_self == null){
-            //没准备好
+            //没准备好 不做任何操作
             return;
         }
         if (_self.getSubject() == null){
@@ -433,14 +455,15 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
             //没变化
         }else if (!StringUtils.equals(self.getSubject(),_self.getSubject())){
             // subject 改变 todo
-            log.info("notify broker new subject is {}",_self.getSubject());
+            log.debug("notify broker new subject is {}",_self.getSubject());
+            root.listener.subjectChange(_self.getSubject());
             self.setSubject(_self.getSubject());
         }
         if (self.getMirror() == null && _self.getMirror() == null){
             //没变化
         }else if (!StringUtils.equals(self.getMirror(),_self.getMirror())){
             // mirror 改变 todo
-            log.info("notify broker new mirror is {}",_self.getMirror());
+            log.debug("notify broker new mirror is {}",_self.getMirror());
             ZkBrokerRoot root = ZkBrokerRoot.getRoot();
             root.listener.mirrorChange(_self.getMirror());
             self.setMirror(_self.getMirror());

@@ -67,12 +67,27 @@ public class QueueChildrenCallback implements AsyncCallback.ChildrenCallback, Wa
      */
     @Override
     public void process(WatchedEvent event) {
-        String path = event.getPath();
+        String path = ZkConstant.Path.QUEUES + "/" + this.queueName;
         ZooKeeper zk = ZkServer.getZookeeper();
         log.info("watch event path is {}", path);
         Event.EventType type = event.getType();
+        Event.KeeperState state = event.getState();
         log.info("type is {},continue watch for topic {}", type, this.queueName);
-        zk.getChildren(path, this, this, null);
+        switch (type){
+            case None:
+                //连接状态发生变化
+                log.warn("path [{}] watch state change,state is {}",path,state);
+                zk.getChildren(path, this, this, path);
+                break;
+            case NodeChildrenChanged:
+                //queue 下面的订阅者发生变化
+                zk.getChildren(path, this, this, path);
+                break;
+            default:
+                log.warn("watch topic children,type not case,type is {}",type);
+                zk.getChildren(path, this, this, path);
+                break;
+        }
     }
 
 
