@@ -486,9 +486,11 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
             root.listener.mirrorChange(_self.getMirror());
             self.setMirror(_self.getMirror());
         }
-
-
     }
 
+
+    public static BrokerListener getListener(){
+        return root.listener;
+    }
 
 }

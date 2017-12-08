@@ -1,11 +1,13 @@
 package com.liutaoyxz.yxzmq.broker.client;
 
+import com.liutaoyxz.yxzmq.broker.storage.NettyMessageContainer;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.BrokerListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author Doug Tao
@@ -34,12 +36,14 @@ public class BrokerZkListener implements BrokerListener {
 
     @Override
     public void topicSubscribersChange(String topicName, List<String> subscribers) {
-
+        List<ServerClient> clients = ServerClientManager.getServerClients(subscribers);
+        NettyMessageContainer.setTopicSubscribers(topicName,clients);
     }
 
     @Override
     public void queueListenersChange(String queueName, List<String> listeners) {
-
+        List<ServerClient> clients = ServerClientManager.getServerClients(listeners);
+        NettyMessageContainer.setQueueListeners(queueName,new LinkedBlockingQueue<>(clients));
     }
 
     @Override

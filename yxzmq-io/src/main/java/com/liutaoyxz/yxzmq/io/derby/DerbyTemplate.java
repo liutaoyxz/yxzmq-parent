@@ -194,7 +194,7 @@ public class DerbyTemplate {
         params[3] = queue.getMessage();
         DbTask task = new DbTask(sql, params);
         Future<Boolean> future = executor.submit(task);
-        if (sync) {
+        if (!sync) {
             //异步执行
             return true;
         }
@@ -249,7 +249,7 @@ public class DerbyTemplate {
         params[1] = queueId;
         DbTask task = new DbTask(sql, params);
         Future<Boolean> future = executor.submit(task);
-        if (sync) {
+        if (!sync) {
             //异步执行
             return true;
         }
@@ -260,7 +260,7 @@ public class DerbyTemplate {
      * 根据brokerName 删除消息
      *
      * @param brokerName
-     * @param sync       是否同步,false 同步, true 异步
+     * @param sync       是否同步,true 同步, false 异步
      * @throws Exception
      */
     public boolean deleteByBrokerName(String brokerName, boolean sync) throws Exception {
@@ -269,7 +269,7 @@ public class DerbyTemplate {
         params[0] = brokerName;
         DbTask task = new DbTask(sql, params);
         Future<Boolean> future = executor.submit(task);
-        if (sync) {
+        if (!sync) {
             //异步执行
             return true;
         }

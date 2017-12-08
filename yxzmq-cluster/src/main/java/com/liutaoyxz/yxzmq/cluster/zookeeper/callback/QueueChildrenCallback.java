@@ -36,11 +36,11 @@ public class QueueChildrenCallback implements AsyncCallback.ChildrenCallback, Wa
         KeeperException.Code code = KeeperException.Code.get(rc);
         switch (code) {
             case OK:
-                log.info("queue [{}] listen change,code is {},subscribers is {}", this.queueName,code,children);
+                log.info("queue [{}] listen change,code is {},listeners is {}", this.queueName,code,children);
                 QueueCallback.addListeners(queueName,children);
                 break;
             default:
-                log.warn("queue [{}] listen change,code is {},subscribers is {}", this.queueName,code,children);
+                log.warn("queue [{}] listen change,code is {},listeners is {}", this.queueName,code,children);
                 break;
         }
     }

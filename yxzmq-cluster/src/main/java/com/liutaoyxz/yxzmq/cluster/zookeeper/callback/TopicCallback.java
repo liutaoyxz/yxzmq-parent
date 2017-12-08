@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper.callback;
 
+import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkServer;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.watch.TopicWatcher;
@@ -113,7 +114,7 @@ public class TopicCallback implements AsyncCallback.ChildrenCallback {
      */
     public static void addSubscribers(String topicName,List<String> subscribers){
         TOPIC_SUBSCRIBERS.put(topicName,new CopyOnWriteArrayList<>(subscribers));
-        // TODO: 2017/11/30 通过listener 通知broker 订阅者发生了变化 broker进行更新
+        ZkBrokerRoot.getListener().topicSubscribersChange(topicName,subscribers);
     }
 
 

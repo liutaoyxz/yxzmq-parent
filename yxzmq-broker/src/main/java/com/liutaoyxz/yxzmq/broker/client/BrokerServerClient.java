@@ -102,6 +102,9 @@ public class BrokerServerClient implements ServerClient {
         }
     }
 
+
+
+
     @Override
     public String name() {
         return this.name;
@@ -154,6 +157,15 @@ public class BrokerServerClient implements ServerClient {
     public void setName(String name) {
         this.name = name;
     }
+
+    class ReadTask implements Runnable{
+
+        @Override
+        public void run() {
+
+        }
+    }
+
 
     @Override
     public String toString() {

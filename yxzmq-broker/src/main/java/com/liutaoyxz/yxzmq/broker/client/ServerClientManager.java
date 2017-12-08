@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,6 +27,11 @@ public class ServerClientManager {
      * channel id 和 serverClient 对应的映射
      */
     private static final ConcurrentHashMap<String, ServerClient> ID_CLIENT = new ConcurrentHashMap<>();
+
+    /**
+     *  name  和 serverClient 对应的映射(注册过的channel 才会有name)
+     */
+    private static final ConcurrentHashMap<String,ServerClient> NAME_CLIENT = new ConcurrentHashMap<>();
 
     public static final Logger log = LoggerFactory.getLogger(ServerClientManager.class);
 
@@ -89,6 +95,7 @@ public class ServerClientManager {
     public synchronized static void subjectChange(String newSubjectId,String subjectName) throws IOException {
         ServerClient newClient = ID_CLIENT.get(newSubjectId);
         newClient.setName(subjectName);
+        NAME_CLIENT.put(subjectName,newClient);
         log.info("subject change,new subject is {}",newClient);
         String oldSubjectId = ServerClientManager.subjectId;
         if (StringUtils.isBlank(oldSubjectId)){
@@ -98,11 +105,32 @@ public class ServerClientManager {
         }
         ServerClientManager.subjectId = newSubjectId;
         ServerClient client = ID_CLIENT.get(oldSubjectId);
-        client.close();
-        String oldSubjectName = client.name();
-        //todo 通知derby,之前的subject 换了,把数据库中的数据读出来
-        log.info("notify derby read old subject [{}] data to memory",client);
+        if (client != null){
+            client.close();
+            String oldSubjectName = client.name();
+            //todo 通知derby,之前的subject 换了,把数据库中的数据读出来
+            log.info("notify derby read old subject [{}] data to memory",client);
 
+
+
+
+        }
+    }
+
+    /**
+     * 根据name 列表查询 ServerClient  列表
+     * @param clients
+     * @return
+     */
+    public static List<ServerClient> getServerClients(List<String> clients){
+        List<ServerClient> result = new ArrayList<>();
+        for (String s :clients){
+            ServerClient client = NAME_CLIENT.get(s);
+            if (client != null){
+                result.add(client);
+            }
+        }
+        return result;
     }
 
 

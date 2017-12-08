@@ -8,6 +8,7 @@ import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 import com.liutaoyxz.yxzmq.broker.client.ServerClientManager;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.BrokerListener;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
+import com.liutaoyxz.yxzmq.io.derby.DerbyTemplate;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -71,6 +72,9 @@ public class NettyServer implements Server, Callable<ChannelFuture> {
 
     @Override
     public void start() {
+        if (config == null) {
+            config = new ServerConfig();
+        }
         Future<ChannelFuture> future = serverExecutor.submit(this);
         try {
             ChannelFuture channelFuture = future.get();
@@ -78,11 +82,13 @@ public class NettyServer implements Server, Callable<ChannelFuture> {
             // cluster start
             ZkBrokerRoot root = ZkBrokerRoot.getRoot(config.getPort(), listener);
             root.start();
+            // derby start
+            DerbyTemplate.createTemplate(config.getDataDir());
+            // wait netty stop
             channelFuture.channel().closeFuture().sync();
-        } catch (InterruptedException e) {
-            log.error("server start error", e);
-            System.exit(1);
-        } catch (ExecutionException e) {
+
+
+        } catch (Exception e) {
             log.error("server start error", e);
             System.exit(1);
         } finally {
@@ -95,9 +101,6 @@ public class NettyServer implements Server, Callable<ChannelFuture> {
 
     @Override
     public ChannelFuture call() {
-        if (config == null) {
-            config = new ServerConfig();
-        }
         ChannelFuture future = null;
         try {
             bootstrap = new Bootstrap();
