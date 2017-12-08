@@ -2,7 +2,7 @@ package com.liutaoyxz.yxzmq.broker;
 
 public class ServerConfig {
 
-    private int port = 11172;
+    private int port = 11173;
 
     public int getPort() {
         return port;

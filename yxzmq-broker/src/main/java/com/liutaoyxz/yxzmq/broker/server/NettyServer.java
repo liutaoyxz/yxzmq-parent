@@ -20,10 +20,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
-import io.netty.handler.codec.protobuf.ProtobufEncoder;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +30,7 @@ import java.util.concurrent.*;
  * @Date 下午10:21 2017/12/4
  * @Description: 转用netty实现broker 和client
  */
-public class NettyServer implements Server,Runnable {
+public class NettyServer implements Server, Callable<ChannelFuture> {
 
     public static final Logger log = LoggerFactory.getLogger(NettyServer.class);
 
@@ -47,6 +43,11 @@ public class NettyServer implements Server,Runnable {
     private CountDownLatch serverStartCountDown = new CountDownLatch(1);
 
     private static NettyServer server;
+
+    private EventLoopGroup serverBoss = new NioEventLoopGroup();
+    private NioEventLoopGroup serverWorker = new NioEventLoopGroup(2);
+
+    private NioEventLoopGroup clientEvent = new NioEventLoopGroup();
 
     private ExecutorService serverExecutor = new ThreadPoolExecutor(1, 1, 5L,
             TimeUnit.DAYS, new LinkedBlockingQueue<>(), new ThreadFactory() {
@@ -61,8 +62,8 @@ public class NettyServer implements Server,Runnable {
     private NettyServer() {
     }
 
-    public synchronized static NettyServer getServer(){
-        if (server == null){
+    public synchronized static NettyServer getServer() {
+        if (server == null) {
             server = new NettyServer();
         }
         return server;
@@ -70,34 +71,39 @@ public class NettyServer implements Server,Runnable {
 
     @Override
     public void start() {
-        serverExecutor.execute(this);
+        Future<ChannelFuture> future = serverExecutor.submit(this);
         try {
-            serverStartCountDown.await();
+            ChannelFuture channelFuture = future.get();
             BrokerListener listener = new BrokerZkListener();
+            // cluster start
             ZkBrokerRoot root = ZkBrokerRoot.getRoot(config.getPort(), listener);
             root.start();
+            channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            log.error("server start error",e);
+            log.error("server start error", e);
+            System.exit(1);
+        } catch (ExecutionException e) {
+            log.error("server start error", e);
+            System.exit(1);
+        } finally {
+            serverBoss.shutdownGracefully();
+            serverWorker.shutdownGracefully();
+            clientEvent.shutdownGracefully();
         }
 
     }
 
     @Override
-    public void run() {
+    public ChannelFuture call() {
         if (config == null) {
             config = new ServerConfig();
         }
-        EventLoopGroup serverBoos = new NioEventLoopGroup();
-        NioEventLoopGroup serverWorker = new NioEventLoopGroup(2);
-
-        NioEventLoopGroup clientEvent = new NioEventLoopGroup();
         ChannelFuture future = null;
         try {
             bootstrap = new Bootstrap();
             bootstrap.group(clientEvent);
             bootstrap.channel(NioSocketChannel.class);
-            bootstrap.option(ChannelOption.SO_KEEPALIVE,true);
-//            bootstrap.handler(new ByteArrayEncoder());
+            bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
             bootstrap.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {
@@ -108,34 +114,27 @@ public class NettyServer implements Server,Runnable {
                 }
             });
             log.info("broker client started...");
-            try {
-                //启动server
-                this.serverBootstrap = new ServerBootstrap();
-                serverBootstrap.group(serverBoos, serverWorker);
-                serverBootstrap.channel(NioServerSocketChannel.class)
-                        .childHandler(new ChannelInitializer<SocketChannel>() {
-                            @Override
-                            protected void initChannel(SocketChannel ch) throws Exception {
-                                ch.config().setAutoRead(true);
-                                ch.pipeline()
-                                        .addLast(new ByteArrayEncoder())
-                                        .addLast(new ByteArrayDecoder())
-                                        .addLast(new NettyChannelHandler());
-                            }
-                        }).option(ChannelOption.SO_BACKLOG, 128)
-                        .childOption(ChannelOption.SO_KEEPALIVE, true);
-                future = serverBootstrap.bind(config.getPort()).sync();
-                log.info("server started in port [{}]",config.getPort());
-            }finally {
-                serverStartCountDown.countDown();
-            }
-            future.channel().closeFuture().sync();
+            //启动server
+            this.serverBootstrap = new ServerBootstrap();
+            serverBootstrap.group(serverBoss, serverWorker);
+            serverBootstrap.channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ch.config().setAutoRead(true);
+                            ch.pipeline()
+                                    .addLast(new ByteArrayEncoder())
+                                    .addLast(new ByteArrayDecoder())
+                                    .addLast(new NettyChannelHandler());
+                        }
+                    }).option(ChannelOption.SO_BACKLOG, 128)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true);
+            future = serverBootstrap.bind(config.getPort()).sync();
+            log.info("server started in port [{}]", config.getPort());
         } catch (InterruptedException e) {
-            log.error("start netty server error",e);
-        } finally {
-            serverBoos.shutdownGracefully();
-            serverWorker.shutdownGracefully();
+            log.error("start netty server error", e);
         }
+        return future;
     }
 
     @Override

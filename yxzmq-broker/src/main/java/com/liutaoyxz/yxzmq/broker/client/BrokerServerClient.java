@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.broker.client;
 
+import com.liutaoyxz.yxzmq.broker.messagehandler.NettyMessageHandler;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import io.netty.buffer.ByteBuf;
@@ -92,10 +93,13 @@ public class BrokerServerClient implements ServerClient {
     }
 
     @Override
-    public void read(byte[] bytes) {
+    public void read(byte[] bytes) throws IOException {
         this.readContainer.read(bytes);
         List<ProtocolBean> beans = this.readContainer.flush();
         log.info("read beans :{}", beans);
+        for (ProtocolBean b : beans){
+            NettyMessageHandler.handlerProtocolBean(b,this);
+        }
     }
 
     @Override

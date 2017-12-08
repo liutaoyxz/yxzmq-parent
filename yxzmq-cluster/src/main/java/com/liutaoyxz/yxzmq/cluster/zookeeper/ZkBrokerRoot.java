@@ -144,6 +144,7 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
             String brokerName = createPath.replace(ZkConstant.Path.BROKERS + "/", "");
             log.info("register broker brokerName is {}", brokerName);
             this.self = new Broker(brokerName);
+            root.listener.setMyName(brokerName);
         } catch (UnknownHostException e) {
             log.error("register zookeeper error", e);
         } catch (InterruptedException e) {
@@ -397,6 +398,19 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
 
 
     /**
+     * 删除broker,如果存在于ready 列表,需要重置主从关系
+     * @param brokerName
+     */
+    public static void delBroker(String brokerName){
+        ALL_BROKER.remove(brokerName);
+        boolean remove = READY_BROKER.remove(brokerName);
+        if (remove){
+            connectBrokers();
+        }
+    }
+
+
+    /**
      * 建立起来broker 之间的关系,查看自己的subject 是否变化,然后处理
      */
     private static void connectBrokers(){
@@ -467,7 +481,7 @@ public class ZkBrokerRoot implements BrokerRoot, AsyncCallback.DataCallback, Wat
             //没变化
         }else if (!StringUtils.equals(self.getMirror(),_self.getMirror())){
             // mirror 改变 todo
-            log.debug("notify broker new mirror is {}",_self.getMirror());
+            log.info("notify broker new mirror is {}",_self.getMirror());
             ZkBrokerRoot root = ZkBrokerRoot.getRoot();
             root.listener.mirrorChange(_self.getMirror());
             self.setMirror(_self.getMirror());

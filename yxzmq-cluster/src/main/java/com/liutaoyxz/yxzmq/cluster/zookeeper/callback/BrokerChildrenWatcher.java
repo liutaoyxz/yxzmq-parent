@@ -34,14 +34,24 @@ public class BrokerChildrenWatcher implements AsyncCallback.DataCallback,Watcher
      */
     @Override
     public void process(WatchedEvent event) {
-        String path = event.getPath();
+        String path = ZkConstant.Path.BROKERS + "/" + brokerName;
         Event.KeeperState state = event.getState();
         Event.EventType type = event.getType();
         ZooKeeper zk = ZkServer.getZookeeper();
         switch (type){
             case None:
                 //连接状态发生变化
-
+                switch (state){
+                    case Expired:
+                        //连接过期,重新连接
+                        log.info("zookeeper expired,restart zookeeper");
+                        ZkBrokerRoot.restart(ZkServer.getZkVersion());
+                        break;
+                    default:
+                        log.debug("path  [{}]  data change , notify broker ",path);
+                        zk.getData(path,this,this,path);
+                        break;
+                }
                 break;
             case NodeDataChanged:
                 //broker 数据发生变化,获取状态并继续监视
@@ -49,8 +59,13 @@ public class BrokerChildrenWatcher implements AsyncCallback.DataCallback,Watcher
                 zk.getData(path,this,this,path);
                 break;
 
+            case NodeDeleted:
+                log.info("brokerName [{}] is deleted",brokerName);
+                ZkBrokerRoot.delBroker(brokerName);
+                break;
             default:
-
+                log.warn("broker [{}] data change, state is {},type is {}",brokerName,state,type);
+                zk.getData(path,this,this,path);
                 break;
         }
 
@@ -68,11 +83,12 @@ public class BrokerChildrenWatcher implements AsyncCallback.DataCallback,Watcher
     @Override
     public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
         KeeperException.Code code = KeeperException.Code.get(rc);
+        String brokerName = path.replace(ZkConstant.Path.BROKERS + "/","");
         switch (code){
             case OK:
                 //正常 todo 获取数据,然后通过listener 通知broker
                 String brokerData = new String(data, Charset.forName("utf-8"));
-                String brokerName = path.replace(ZkConstant.Path.BROKERS + "/","");
+
                 ZkBrokerRoot.brokerReady(brokerName);
                 log.info("broker [{}] data change , new date is {}",brokerName,brokerData);
                 break;
@@ -81,8 +97,13 @@ public class BrokerChildrenWatcher implements AsyncCallback.DataCallback,Watcher
 
 
                 break;
+            case NONODE:
+                // 没有这个节点了,删除他
+                log.info("broker [{}] not exist",brokerName);
+                ZkBrokerRoot.delBroker(brokerName);
+                break;
             default:
-                log.warn("get broker data,code is {} ",code);
+                log.warn("path [{}] get broker data,code is {} ",path,code);
                 break;
         }
     }

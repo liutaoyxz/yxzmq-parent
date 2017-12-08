@@ -19,7 +19,7 @@ public class ZkServer {
 
     private static ZooKeeper zooKeeper;
 
-    private static int timeout = 1000;
+    private static int timeout = 15000;
 
     private static String connectStr = "127.0.0.1:2181";
 

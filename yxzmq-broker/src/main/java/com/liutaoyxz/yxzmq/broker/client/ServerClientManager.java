@@ -62,10 +62,6 @@ public class ServerClientManager {
      * @throws InterruptedException
      */
     public synchronized static void setMirror(String mirrorName) throws InterruptedException, IOException {
-        if (StringUtils.isNotBlank(ServerClientManager.mirrorId)){
-            ServerClient mirrorClient = ID_CLIENT.get(mirrorId);
-            mirrorClient.close();
-        }
         NettyServer server = NettyServer.getServer();
         String[] strings = StringUtils.split(mirrorName, "-");
         String[] ss = StringUtils.split(strings[0], ":");
@@ -90,17 +86,22 @@ public class ServerClientManager {
      * 主体发生了变化,通知derby将之前的subject  数据存储到内存,替换subject
      * @param newSubjectId 新的subjectId
      */
-    public synchronized static void subjectChange(String newSubjectId){
+    public synchronized static void subjectChange(String newSubjectId,String subjectName) throws IOException {
+        ServerClient newClient = ID_CLIENT.get(newSubjectId);
+        newClient.setName(subjectName);
+        log.info("subject change,new subject is {}",newClient);
         String oldSubjectId = ServerClientManager.subjectId;
         if (StringUtils.isBlank(oldSubjectId)){
             //之前没有subject
             ServerClientManager.subjectId = newSubjectId;
             return ;
         }
+        ServerClientManager.subjectId = newSubjectId;
         ServerClient client = ID_CLIENT.get(oldSubjectId);
+        client.close();
         String oldSubjectName = client.name();
         //todo 通知derby,之前的subject 换了,把数据库中的数据读出来
-
+        log.info("notify derby read old subject [{}] data to memory",client);
 
     }
 

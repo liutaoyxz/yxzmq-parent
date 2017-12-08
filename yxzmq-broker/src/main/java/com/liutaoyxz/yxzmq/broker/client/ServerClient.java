@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.client;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -26,7 +27,7 @@ public interface ServerClient extends Closeable {
      */
     void read(List<byte[]> bytes,boolean sync);
 
-    void read(byte[] bytes);
+    void read(byte[] bytes) throws IOException;
 
     /**
      * 获得client的name,这个name唯一,可以根据name映射到唯一的client
