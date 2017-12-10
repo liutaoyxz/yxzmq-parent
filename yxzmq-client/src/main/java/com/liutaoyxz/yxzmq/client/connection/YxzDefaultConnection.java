@@ -143,7 +143,7 @@ public class YxzDefaultConnection extends AbstractConnection {
                 return thread;
             }
         });
-        this.activeChannels = new ArrayBlockingQueue(channelNum);
+        this.activeChannels = new ArrayBlockingQueue<>(channelNum);
         this.topicListener = new ConcurrentHashMap<>();
         this.queueListener = new ConcurrentHashMap<>();
     }
