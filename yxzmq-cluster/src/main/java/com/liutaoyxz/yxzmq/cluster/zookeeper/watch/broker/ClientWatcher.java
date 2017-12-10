@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.cluster.zookeeper.watch;
+package com.liutaoyxz.yxzmq.cluster.zookeeper.watch.broker;
 
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;

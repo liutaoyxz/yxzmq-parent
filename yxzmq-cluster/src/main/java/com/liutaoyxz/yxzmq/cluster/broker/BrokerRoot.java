@@ -1,5 +1,7 @@
 package com.liutaoyxz.yxzmq.cluster.broker;
 
+import org.apache.zookeeper.KeeperException;
+
 import java.util.List;
 
 /**
@@ -14,7 +16,7 @@ public interface BrokerRoot {
      * 检查根目录是否存在并且监视根目录
      * @return
      */
-    boolean checkRoot();
+    boolean checkRoot() throws KeeperException, InterruptedException, Exception;
 
 
     /**
@@ -39,8 +41,9 @@ public interface BrokerRoot {
 
     /**
      * 启动
+     * @throws Exception 抛出异常,启动时停止
      */
-    void start() throws InterruptedException;
+    void start() throws Exception;
 
 
 

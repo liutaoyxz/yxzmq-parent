@@ -42,7 +42,7 @@ public class ZkBrokerRootTest {
 
     @Test
     public void stcreatart() throws Exception{
-        ZkBrokerRoot root = ZkBrokerRoot.getRoot(11179,null);
+        ZkBrokerRoot root = ZkBrokerRoot.createRoot(11179,null,"127.0.0.1:2181");
         root.start();
         CountDownLatch latch = new CountDownLatch(1);
         latch.await();

@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.cluster.zookeeper.callback;
+package com.liutaoyxz.yxzmq.cluster.zookeeper.watch.broker;
 
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Doug Tao
@@ -64,7 +63,7 @@ public class TopicChildrenCallback implements AsyncCallback.ChildrenCallback, Wa
         TopicChildrenCallback callback = new TopicChildrenCallback(topicName);
         ZooKeeper zk = ZkServer.getZookeeper();
         String path = ZkConstant.Path.TOPICS + "/" + topicName;
-        log.info("watch topic [{}]",topicName);
+        log.debug("watch topic [{}]",topicName);
         zk.getChildren(path, callback, callback, path);
     }
 

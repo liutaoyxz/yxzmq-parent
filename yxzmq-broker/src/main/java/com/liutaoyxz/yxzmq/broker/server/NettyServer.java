@@ -80,7 +80,7 @@ public class NettyServer implements Server, Callable<ChannelFuture> {
             ChannelFuture channelFuture = future.get();
             BrokerListener listener = new BrokerZkListener();
             // cluster start
-            ZkBrokerRoot root = ZkBrokerRoot.getRoot(config.getPort(), listener);
+            ZkBrokerRoot root = ZkBrokerRoot.createRoot(config.getPort(), listener,config.getZkConnectStr());
             root.start();
             // derby start
             DerbyTemplate.createTemplate(config.getDataDir());

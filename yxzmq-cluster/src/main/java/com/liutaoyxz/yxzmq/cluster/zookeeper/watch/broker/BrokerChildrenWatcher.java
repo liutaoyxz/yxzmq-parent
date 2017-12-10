@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.cluster.zookeeper.callback;
+package com.liutaoyxz.yxzmq.cluster.zookeeper.watch.broker;
 
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
@@ -88,9 +88,8 @@ public class BrokerChildrenWatcher implements AsyncCallback.DataCallback,Watcher
             case OK:
                 //正常 todo 获取数据,然后通过listener 通知broker
                 String brokerData = new String(data, Charset.forName("utf-8"));
-
-                ZkBrokerRoot.brokerReady(brokerName);
                 log.info("broker [{}] data change , new date is {}",brokerName,brokerData);
+                ZkBrokerRoot.brokerStateChange(brokerName,brokerData);
                 break;
             case CONNECTIONLOSS:
                 //连接丢失 todo

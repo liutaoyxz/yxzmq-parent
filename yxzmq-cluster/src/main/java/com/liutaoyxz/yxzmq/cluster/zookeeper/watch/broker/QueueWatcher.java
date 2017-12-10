@@ -1,10 +1,8 @@
-package com.liutaoyxz.yxzmq.cluster.zookeeper.watch;
+package com.liutaoyxz.yxzmq.cluster.zookeeper.watch.broker;
 
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkServer;
-import com.liutaoyxz.yxzmq.cluster.zookeeper.callback.QueueCallback;
-import com.liutaoyxz.yxzmq.cluster.zookeeper.callback.QueueChildrenCallback;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;

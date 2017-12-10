@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.cluster.zookeeper.watch;
+package com.liutaoyxz.yxzmq.cluster.zookeeper.watch.broker;
 
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkServer;

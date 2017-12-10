@@ -27,14 +27,26 @@ public class ZkServer {
 
     private static AtomicInteger zkVersion = new AtomicInteger(1);
 
-    public static ZooKeeper getZookeeper(){
-        if (zooKeeper == null){
-            synchronized (ZkServer.class){
-                if (zooKeeper == null){
+    public static ZooKeeper createZookeeper(String connectStr) throws IOException {
+        if (zooKeeper == null) {
+            synchronized (ZkServer.class) {
+                ZkServer.connectStr = connectStr;
+                if (zooKeeper == null) {
+                    zooKeeper = new ZooKeeper(ZkServer.connectStr, timeout, new ServerWatcher());
+                }
+            }
+        }
+        return zooKeeper;
+    }
+
+    public static ZooKeeper getZookeeper() {
+        if (zooKeeper == null) {
+            synchronized (ZkServer.class) {
+                if (zooKeeper == null) {
                     try {
-                        zooKeeper = new ZooKeeper(connectStr,timeout,new ServerWatcher());
+                        zooKeeper = new ZooKeeper(ZkServer.connectStr, timeout, new ServerWatcher());
                     } catch (IOException e) {
-                        log.info("create zookeeper error",e);
+                        log.info("create zookeeper error", e);
                     }
                 }
             }
@@ -42,53 +54,52 @@ public class ZkServer {
         return zooKeeper;
     }
 
-    public static int reCreateZookeeper(){
-        synchronized (ZkServer.class){
+    public static int reCreateZookeeper() {
+        synchronized (ZkServer.class) {
             try {
-                if (zooKeeper != null){
+                if (zooKeeper != null) {
                     zooKeeper.close();
                 }
-                zooKeeper = new ZooKeeper(connectStr,timeout,new ServerWatcher());
+                zooKeeper = new ZooKeeper(ZkServer.connectStr, timeout, new ServerWatcher());
                 zkVersion.incrementAndGet();
             } catch (IOException e) {
-                log.info("create zookeeper error",e);
+                log.info("create zookeeper error", e);
             } catch (InterruptedException e) {
-                log.info("create zookeeper error",e);
+                log.info("create zookeeper error", e);
             }
             return zkVersion.get();
         }
     }
 
 
-    public static int getZkVersion(){
+    public static int getZkVersion() {
         return zkVersion.get();
     }
 
     /**
      * 启动
      */
-    public static void start(){
+    public static void start() {
         ZooKeeper zk = getZookeeper();
-
 
 
     }
 
 
-    static class ServerWatcher implements Watcher{
+    static class ServerWatcher implements Watcher {
 
         @Override
         public void process(WatchedEvent event) {
             Event.KeeperState state = event.getState();
             Event.EventType type = event.getType();
-            switch (type){
+            switch (type) {
 
 
                 default:
                     break;
             }
 
-            log.debug("server event :{}",event);
+            log.debug("server event :{}", event);
         }
     }
 

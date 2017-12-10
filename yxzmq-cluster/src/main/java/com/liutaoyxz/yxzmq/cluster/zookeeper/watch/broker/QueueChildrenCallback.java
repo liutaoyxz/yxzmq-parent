@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.cluster.zookeeper.callback;
+package com.liutaoyxz.yxzmq.cluster.zookeeper.watch.broker;
 
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkConstant;
@@ -57,7 +57,7 @@ public class QueueChildrenCallback implements AsyncCallback.ChildrenCallback, Wa
         QueueChildrenCallback callback = new QueueChildrenCallback(queueName);
         ZooKeeper zk = ZkServer.getZookeeper();
         String path = ZkConstant.Path.QUEUES + "/" + queueName;
-        log.info("watch queue [{}]",queueName);
+        log.debug("watch queue [{}]",queueName);
         zk.getChildren(path, callback, callback, path);
     }
 

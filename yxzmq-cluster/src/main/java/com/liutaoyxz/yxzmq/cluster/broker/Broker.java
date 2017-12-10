@@ -1,6 +1,5 @@
 package com.liutaoyxz.yxzmq.cluster.broker;
 
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -73,6 +72,9 @@ public class Broker implements Comparable<Broker>{
         return this.ready;
     }
 
+    public void notReady(){
+        this.ready = false;
+    }
 
     public int getSize() {
         return size;
