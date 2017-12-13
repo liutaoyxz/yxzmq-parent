@@ -200,4 +200,33 @@ public class YxzDefaultSession extends AbstractSession {
         return this.connection;
     }
 
+
+    /***************************事务处理****************************/
+
+    @Override
+    public boolean getTransacted() throws JMSException {
+        return false;
+    }
+
+    @Override
+    public int getAcknowledgeMode() throws JMSException {
+        return 0;
+    }
+
+    @Override
+    public void commit() throws JMSException {
+
+    }
+
+    @Override
+    public void rollback() throws JMSException {
+
+    }
+
+    @Override
+    public void recover() throws JMSException {
+
+    }
+
+    /***************************事务处理****************************/
 }

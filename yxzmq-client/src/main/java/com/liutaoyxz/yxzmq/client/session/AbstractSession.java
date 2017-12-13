@@ -44,35 +44,6 @@ public abstract class AbstractSession implements Session {
         return null;
     }
 
-
-    @Override
-    public boolean getTransacted() throws JMSException {
-        return false;
-    }
-
-    @Override
-    public int getAcknowledgeMode() throws JMSException {
-        return 0;
-    }
-
-    @Override
-    public void commit() throws JMSException {
-
-    }
-
-    @Override
-    public void rollback() throws JMSException {
-
-    }
-
-    @Override
-    public void recover() throws JMSException {
-
-    }
-
-
-
-
     @Override
     public MessageConsumer createConsumer(Destination destination, String s) throws JMSException {
         return null;
