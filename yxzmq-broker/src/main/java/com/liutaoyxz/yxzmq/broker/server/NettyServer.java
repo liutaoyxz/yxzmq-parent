@@ -113,7 +113,7 @@ public class NettyServer implements Server, Callable<ChannelFuture> {
                     ch.pipeline()
                             .addLast(new ByteArrayEncoder())
                             .addLast(new ByteArrayDecoder())
-                            .addLast(new NettyClientChannelHandler());
+                            ;
                 }
             });
             log.info("broker client started...");

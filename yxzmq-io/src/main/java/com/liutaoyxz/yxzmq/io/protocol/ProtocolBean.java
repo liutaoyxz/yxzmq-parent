@@ -12,9 +12,9 @@ public class ProtocolBean {
      */
     private int command;
     /**
-     * connection 的groupId
+     * connection  zookeeper 名
      */
-    private String groupId;
+    private String zkName;
 
     /**
      * 消息描述类 class name
@@ -76,19 +76,19 @@ public class ProtocolBean {
         this.dataBytes = dataBytes;
     }
 
-    public String getGroupId() {
-        return groupId;
+    public String getZkName() {
+        return zkName;
     }
 
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
+    public void setZkName(String zkName) {
+        this.zkName = zkName;
     }
 
     @Override
     public String toString() {
         return "ProtocolBean{" +
                 "command=" + command +
-                ", groupId='" + groupId + '\'' +
+                ", zkName='" + zkName + '\'' +
                 ", descClass='" + descClass + '\'' +
                 ", descBytes=" + Arrays.toString(descBytes) +
                 ", dataClass='" + dataClass + '\'' +

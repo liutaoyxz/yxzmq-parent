@@ -137,7 +137,7 @@ public class MessageContainer {
      * @param text
      * @return
      */
-    private static List<byte[]> getTopicMessageByte(String topicName, String text, String groupId) {
+    private static List<byte[]> getTopicMessageByte(String topicName, String text, String zkName) {
         MessageDesc desc = new MessageDesc();
         desc.setTitle(topicName);
         desc.setType(CommonConstant.MessageType.TOPIC);
@@ -145,7 +145,7 @@ public class MessageContainer {
         ProtocolBean bean = new ProtocolBean();
         bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
         bean.setCommand(CommonConstant.Command.SEND);
-        bean.setGroupId(groupId);
+        bean.setZkName(zkName);
 
         Metadata metadata = new Metadata();
         return BeanUtil.convertBeanToByte(metadata, desc, bean);

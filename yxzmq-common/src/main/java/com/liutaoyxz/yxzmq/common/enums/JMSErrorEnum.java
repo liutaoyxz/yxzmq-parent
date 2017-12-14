@@ -17,7 +17,9 @@ public enum JMSErrorEnum {
     SESSION_CLOSED("0004","session already closed"),
     CONNECTION_NOT_START("0005","connection not start"),
     QUEUE_NOT_DEFINE("0006","queue not define"),
-    OP_NOT_SUPPORT("0007","operator not support")
+    OP_NOT_SUPPORT("0007","operator not support"),
+    CONNECTION_START_ERROR("0008","connection start error"),
+    NO_BROKER("0009","no broker")
     ;
 
 

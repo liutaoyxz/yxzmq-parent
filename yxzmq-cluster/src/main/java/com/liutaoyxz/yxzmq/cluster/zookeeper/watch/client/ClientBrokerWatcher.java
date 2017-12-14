@@ -15,7 +15,13 @@ import java.util.List;
  */
 public class ClientBrokerWatcher implements Watcher,AsyncCallback.ChildrenCallback{
 
+    private ZkClientRoot root;
+
     public static final Logger log = LoggerFactory.getLogger(ClientBrokerWatcher.class);
+
+    public ClientBrokerWatcher(ZkClientRoot root) {
+        this.root = root;
+    }
 
     @Override
     public void process(WatchedEvent event) {
@@ -61,7 +67,7 @@ public class ClientBrokerWatcher implements Watcher,AsyncCallback.ChildrenCallba
         switch (code){
             case OK:
                 // 获得到了children
-                ZkClientRoot.brokerChildrenChange(children);
+                root.brokerChildrenChange(children);
                 break;
             default:
                 log.warn("code not OK, code is {}",code);

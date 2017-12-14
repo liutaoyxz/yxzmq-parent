@@ -24,8 +24,11 @@ public class ClientBrokerChildrenWatcher implements AsyncCallback.DataCallback,W
      */
     private String brokerName;
 
-    public ClientBrokerChildrenWatcher(String brokerName) {
+    private ZkClientRoot root;
+
+    public ClientBrokerChildrenWatcher(String brokerName,ZkClientRoot root) {
         this.brokerName = brokerName;
+        this.root = root;
     }
 
     /**
@@ -45,7 +48,7 @@ public class ClientBrokerChildrenWatcher implements AsyncCallback.DataCallback,W
                     case Expired:
                         //连接过期,重新连接
                         log.info("zookeeper expired,restart zookeeper");
-                        ZkClientRoot.restart(ZkServer.getZkVersion());
+                        root.restart(ZkServer.getZkVersion());
                         break;
                     default:
                         log.debug("path  [{}]  data change , notify broker ",path);
@@ -61,7 +64,7 @@ public class ClientBrokerChildrenWatcher implements AsyncCallback.DataCallback,W
 
             case NodeDeleted:
                 log.info("brokerName [{}] is deleted",brokerName);
-                ZkClientRoot.delBroker(brokerName);
+                root.delBroker(brokerName);
                 break;
             default:
                 log.warn("broker [{}] data change, state is {},type is {}",brokerName,state,type);
@@ -88,7 +91,7 @@ public class ClientBrokerChildrenWatcher implements AsyncCallback.DataCallback,W
             case OK:
                 String brokerData = new String(data, Charset.forName("utf-8"));
                 log.info("broker [{}] data change , new date is {}",brokerName,brokerData);
-                ZkClientRoot.brokerStateChange(brokerName,brokerData);
+                root.brokerStateChange(brokerName,brokerData);
                 break;
             case CONNECTIONLOSS:
                 //连接丢失 todo
@@ -98,7 +101,7 @@ public class ClientBrokerChildrenWatcher implements AsyncCallback.DataCallback,W
             case NONODE:
                 // 没有这个节点了,删除他
                 log.info("broker [{}] not exist",brokerName);
-                ZkClientRoot.delBroker(brokerName);
+                root.delBroker(brokerName);
                 break;
             default:
                 log.warn("path [{}] get broker data,code is {} ",path,code);

@@ -1,7 +1,10 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Doug Tao
@@ -10,6 +13,13 @@ import io.netty.channel.SimpleChannelInboundHandler;
  */
 public class NettyClientChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
+    private static final Logger log = LoggerFactory.getLogger(NettyClientChannelHandler.class);
+
+    private YxzNettyConnection conn;
+
+    public NettyClientChannelHandler(YxzNettyConnection conn) {
+        this.conn = conn;
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, byte[] msg) throws Exception {
@@ -19,7 +29,10 @@ public class NettyClientChannelHandler extends SimpleChannelInboundHandler<byte[
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-
+        byte[] bytes = (byte[]) msg;
+        Channel channel = ctx.channel();
+        String id = channel.id().toString();
+        log.info("read msg {}",msg);
     }
 
     @Override

@@ -138,7 +138,7 @@ public class YxzClientChannel {
      */
     private void handlerBean(ProtocolBean bean){
         int command = bean.getCommand();
-        String groupId = bean.getGroupId();
+        String zkName = bean.getZkName();
         MessageDesc desc = null;
         String text = null;
         int msgType = 0;
@@ -147,7 +147,7 @@ public class YxzClientChannel {
                 if (isAssistChannel){
                     log.debug("assistChannel register success");
                     this.registered = true;
-                    this.parent.setGroupId(groupId);
+                    this.parent.setGroupId(zkName);
                     this.parent.assistRegisterDown();
                 }else {
                     log.debug("mainChannel register success");

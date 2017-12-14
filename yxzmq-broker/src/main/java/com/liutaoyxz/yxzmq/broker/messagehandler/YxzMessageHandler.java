@@ -138,7 +138,7 @@ public class YxzMessageHandler {
      * @param client
      */
     private static void handlerAssistRegister(ProtocolBean bean,Client client) throws IOException {
-        String groupId = bean.getGroupId();
+        String groupId = bean.getZkName();
         SocketChannel channel = client.channel();
         if (StringUtils.isBlank(groupId)){
             //第一次注册
@@ -150,7 +150,7 @@ public class YxzMessageHandler {
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();
             bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
-            bean.setGroupId(group.groupId());
+            bean.setZkName(group.groupId());
             List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
             for (byte[] b:bytes){
                 ByteBuffer buffer = ByteBuffer.wrap(b);
@@ -168,7 +168,7 @@ public class YxzMessageHandler {
             client.setIsMainChannel(false);
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();
-            bean.setGroupId(group.groupId());
+            bean.setZkName(group.groupId());
             bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
             List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
             for (byte[] b:bytes){
@@ -182,20 +182,20 @@ public class YxzMessageHandler {
     }
 
     private static void handlerMainRegister(ProtocolBean bean,Client client) throws IOException {
-        String groupId = bean.getGroupId();
+        String zkName = bean.getZkName();
         SocketChannel channel = client.channel();
-        if (StringUtils.isBlank(groupId)){
+        if (StringUtils.isBlank(zkName)){
             //有问题 todo
 
         }else {
             //注册
-            Group group = client.handler().getGroup(groupId);
+            Group group = client.handler().getGroup(zkName);
             client.setParent(group);
             client.setIsMainChannel(true);
             group.addActiveClient(client);
             Metadata metadata = new Metadata();
             bean  = new ProtocolBean();
-            bean.setGroupId(groupId);
+            bean.setZkName(zkName);
             bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
             List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);
             for (byte[] b:bytes){

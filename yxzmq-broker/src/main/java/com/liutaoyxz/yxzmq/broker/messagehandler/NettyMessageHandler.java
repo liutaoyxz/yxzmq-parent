@@ -45,7 +45,7 @@ public class NettyMessageHandler {
             case CommonConstant.Command.BROKER_SUBJECT_REGISTER:
                 //主体注册
                 String newSubjectId = client.id();
-                String subjectName = bean.getGroupId();
+                String subjectName = bean.getZkName();
                 ServerClientManager.subjectChange(newSubjectId,subjectName);
                 break;
             default:

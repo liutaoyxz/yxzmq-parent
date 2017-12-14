@@ -24,9 +24,8 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * @author Doug Tao
  * @Date: 10:23 2017/11/28
- *
  */
-public class ZkClientRoot{
+public class ZkClientRoot {
 
 
     public static final Logger log = LoggerFactory.getLogger(ZkClientRoot.class);
@@ -59,19 +58,11 @@ public class ZkClientRoot{
         this.listener = listener;
     }
 
-    private static ZkClientRoot root;
-
     private String myName;
 
     public synchronized static ZkClientRoot createRoot(ClientListener listener, String zookeeperConnectStr) throws IOException {
-        if (root == null) {
-            ZkServer.createZookeeper(zookeeperConnectStr);
-            root = new ZkClientRoot(listener);
-        }
-        return root;
-    }
-
-    public synchronized static ZkClientRoot getRoot() {
+        ZkServer.createZookeeper(zookeeperConnectStr);
+        ZkClientRoot root = new ZkClientRoot(listener);
         return root;
     }
 
@@ -122,41 +113,43 @@ public class ZkClientRoot{
         return true;
     }
 
-    private boolean register() throws Exception{
+    private boolean register() throws Exception {
         ZooKeeper zk = ZkServer.getZookeeper();
-            String hostAddress = InetAddress.getLocalHost().getHostAddress();
-            log.info("hostAddress is {}", hostAddress);
-            String createPath = zk.create(ZkConstant.Path.CLIENTS + "/" + hostAddress + "-", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-            String clientName = createPath.replace(ZkConstant.Path.CLIENTS + "/", "");
-            log.info("register client clientName is {}", clientName);
-            root.myName = clientName;
+        String hostAddress = InetAddress.getLocalHost().getHostAddress();
+        log.info("hostAddress is {}", hostAddress);
+        String createPath = zk.create(ZkConstant.Path.CLIENTS + "/" + hostAddress + "-", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+        String clientName = createPath.replace(ZkConstant.Path.CLIENTS + "/", "");
+        log.info("register client clientName is {}", clientName);
+        this.myName = clientName;
         return false;
     }
 
 
-
-    public void start() throws Exception {
+    public List<Broker> start() throws Exception {
+        List<Broker> result = new ArrayList<>();
         checkRoot();
         ZooKeeper zk = ZkServer.getZookeeper();
-        ClientBrokerWatcher clientBrokerWatcher = new ClientBrokerWatcher();
+        ClientBrokerWatcher clientBrokerWatcher = new ClientBrokerWatcher(this);
         //获取brokers下的 children,第一次获得到children之后遍历children的数据,判断是否为ready,采用同步的方式
         List<String> brokerChildren = zk.getChildren(ZkConstant.Path.BROKERS, clientBrokerWatcher);
         log.info("brokers children {}", brokerChildren);
         createBrokers(brokerChildren);
         register();
+        result.addAll(READY_BROKER);
+        return result;
     }
 
     /**
      * 连接过期后重启zookeeper 并且重新
      */
-    public static void restart(int version) {
+    public void restart(int version) {
         restartLock.lock();
         if (version < zkVersion) {
             return;
         }
         try {
             zkVersion = ZkServer.reCreateZookeeper();
-            ZkClientRoot.root.start();
+            start();
         } catch (Exception e) {
             log.error("restart zookeeper error", e);
         } finally {
@@ -168,22 +161,22 @@ public class ZkClientRoot{
     /**
      * broker 状态为ready,添加到ready 列表,重新建立关系
      */
-    public static void brokerStateChange(String brokerName,String newState) {
+    public void brokerStateChange(String brokerName, String newState) {
         Broker broker = ALL_BROKER.get(brokerName);
-        if (StringUtils.equals(ZkConstant.BrokerState.READY,newState)){
+        if (StringUtils.equals(ZkConstant.BrokerState.READY, newState)) {
             //ready
-            if (READY_BROKER.contains(broker)){
+            if (READY_BROKER.contains(broker)) {
                 return;
-            }else {
+            } else {
                 broker.ready();
                 READY_BROKER.add(broker);
                 connectBrokers();
             }
-        }else {
-            if (READY_BROKER.contains(broker)){
+        } else {
+            if (READY_BROKER.contains(broker)) {
                 broker.notReady();
                 boolean remove = READY_BROKER.remove(broker);
-                if (remove){
+                if (remove) {
                     connectBrokers();
                 }
             }
@@ -196,7 +189,7 @@ public class ZkClientRoot{
         if (children != null) {
             for (String child : children) {
                 String path = ZkConstant.Path.BROKERS + "/" + child;
-                ClientBrokerChildrenWatcher bcw = new ClientBrokerChildrenWatcher(child);
+                ClientBrokerChildrenWatcher bcw = new ClientBrokerChildrenWatcher(child,this);
                 try {
                     byte[] data = zk.getData(path, bcw, null);
                     if (data != null) {
@@ -219,7 +212,7 @@ public class ZkClientRoot{
             }
             if (READY_BROKER.size() > 0) {
                 //已经有准备好的broker
-                ZkClientRoot.connectBrokers();
+                connectBrokers();
             }
         }
     }
@@ -229,7 +222,7 @@ public class ZkClientRoot{
      *
      * @param children
      */
-    public static void brokerChildrenChange(List<String> children) {
+    public void brokerChildrenChange(List<String> children) {
         log.info("brokerChildren change,children is {}", children);
         ZooKeeper zk = ZkServer.getZookeeper();
         try {
@@ -237,7 +230,7 @@ public class ZkClientRoot{
             READY_BROKER.clear();
             for (String child : children) {
                 String path = ZkConstant.Path.BROKERS + "/" + child;
-                ClientBrokerChildrenWatcher bcw = new ClientBrokerChildrenWatcher(child);
+                ClientBrokerChildrenWatcher bcw = new ClientBrokerChildrenWatcher(child,this);
                 //监视数据
                 byte[] data = zk.getData(path, bcw, null);
                 if (data != null) {
@@ -269,57 +262,58 @@ public class ZkClientRoot{
     /**
      * 检查已有的brokers  通知client,断开或者新连接的broker
      */
-    private synchronized static void connectBrokers(){
+    private synchronized void connectBrokers() {
         List<String> addBrokers = new ArrayList<>();
         List<String> delBrokers = new ArrayList<>();
         List<String> newBrokers = null;
-        if (CONNECTED_BROKER.size() == 0){
+        if (CONNECTED_BROKER.size() == 0) {
             //之前没有连接的broker
-            if (READY_BROKER.size() > 0){
-                for (Broker b : READY_BROKER){
+            if (READY_BROKER.size() > 0) {
+                for (Broker b : READY_BROKER) {
                     addBrokers.add(b.getName());
                 }
-                newBrokers = root.listener.addBrokers(addBrokers);
+                newBrokers = listener.addBrokers(addBrokers);
                 CONNECTED_BROKER.clear();
-                log.info("new brokers is {}",newBrokers);
-                if (newBrokers != null){
+                log.info("new brokers is {}", newBrokers);
+                if (newBrokers != null) {
                     CONNECTED_BROKER.addAll(getBrokersByNames(newBrokers));
                 }
             }
             return;
         }
 
-        for (Broker b : READY_BROKER){
-            if (!CONNECTED_BROKER.contains(b)){
+        for (Broker b : READY_BROKER) {
+            if (!CONNECTED_BROKER.contains(b)) {
                 addBrokers.add(b.getName());
             }
         }
-        for (Broker b : CONNECTED_BROKER){
-            if (!addBrokers.contains(b.getName())){
+        for (Broker b : CONNECTED_BROKER) {
+            if (!addBrokers.contains(b.getName())) {
                 delBrokers.add(b.getName());
             }
         }
-        if (!addBrokers.isEmpty()){
-            newBrokers = root.listener.addBrokers(addBrokers);
+        if (!addBrokers.isEmpty()) {
+            newBrokers = listener.addBrokers(addBrokers);
         }
-        if (!delBrokers.isEmpty()){
-            newBrokers = root.listener.delBrokers(delBrokers);
+        if (!delBrokers.isEmpty()) {
+            newBrokers = listener.delBrokers(delBrokers);
         }
         CONNECTED_BROKER.clear();
-        log.info("new brokers is {}",newBrokers);
-        if (newBrokers != null){
+        log.info("new brokers is {}", newBrokers);
+        if (newBrokers != null) {
             CONNECTED_BROKER.addAll(getBrokersByNames(newBrokers));
         }
     }
 
     /**
      * 根据名字列表获得对象列表
+     *
      * @param brokerNames
      * @return
      */
-    private static CopyOnWriteArrayList<Broker> getBrokersByNames(List<String> brokerNames){
+    private static CopyOnWriteArrayList<Broker> getBrokersByNames(List<String> brokerNames) {
         CopyOnWriteArrayList<Broker> result = new CopyOnWriteArrayList<>();
-        for (String name : brokerNames){
+        for (String name : brokerNames) {
             result.add(ALL_BROKER.get(name));
         }
         return result;
@@ -329,7 +323,7 @@ public class ZkClientRoot{
     /**
      * broker 状态为ready,添加到ready 列表,重新建立关系
      */
-    public static void brokerReady(String brokerName) {
+    public void brokerReady(String brokerName) {
         Broker broker = ALL_BROKER.get(brokerName);
         broker.ready();
         READY_BROKER.add(broker);
@@ -342,7 +336,7 @@ public class ZkClientRoot{
      *
      * @param brokerName
      */
-    public static void delBroker(String brokerName) {
+    public void delBroker(String brokerName) {
         ALL_BROKER.remove(brokerName);
         boolean remove = READY_BROKER.remove(brokerName);
         if (remove) {
@@ -351,13 +345,13 @@ public class ZkClientRoot{
     }
 
 
-    public static String getMyName(){
-        return root.myName;
+    public String getMyName() {
+        return myName;
     }
 
 
-    public static ClientListener getListener() {
-        return root.listener;
+    public ClientListener getListener() {
+        return listener;
     }
 
 }

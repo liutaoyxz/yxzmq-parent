@@ -9,8 +9,19 @@ public enum ConnectStatus {
     /** 还未连接 **/
     NOT_CONNECT(0),
 
-    /** 连接中 **/
-    CONNECTING(1);
+    /** 已连接,未注册 **/
+    NOT_REGISTER(1),
+
+    /** 已连接,已注册 **/
+    REGISTERED(2),
+
+    /**连接断开**/
+    DISCONNECTED(3),
+
+    /**  连接关闭 **/
+    CLOSED(-1)
+
+    ;
 
 
     private int code;

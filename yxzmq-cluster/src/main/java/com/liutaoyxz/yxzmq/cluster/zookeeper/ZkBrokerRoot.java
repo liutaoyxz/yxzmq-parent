@@ -122,7 +122,7 @@ public class ZkBrokerRoot implements BrokerRoot {
                 log.info("queues create result is {}", queuesCreate);
             }
 
-            log.info("brokersStat is {},clientsStat is {},topicsStat is {},queuesStat is {}",
+            log.info("\r brokersStat is {} \r clientsStat is {} \r topicsStat is {} \r queuesStat is {}",
                     brokersStat, clientsStat, topicsStat, queuesStat);
         }
         return true;

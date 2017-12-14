@@ -47,6 +47,11 @@ public interface CommonConstant {
          */
         int BROKER_SUBJECT_REGISTER = 7;
 
+        /**
+         * client 端注册
+         */
+        int CLIENT_REGISTER = 8;
+
     }
 
     /**

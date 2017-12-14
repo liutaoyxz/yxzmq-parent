@@ -341,7 +341,7 @@ public class YxzDefaultConnection extends AbstractConnection {
             }
             SocketChannel sc = yc.getChannel();
             ProtocolBean bean = new ProtocolBean();
-            bean.setGroupId(groupId);
+            bean.setZkName(groupId);
             bean.setCommand(CommonConstant.Command.MAIN_REGISTER);
             Metadata metadata = new Metadata();
             List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, null, bean);

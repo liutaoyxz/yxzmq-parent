@@ -80,7 +80,7 @@ public class ServerClientManager {
         Metadata metadata = new Metadata();
         MessageDesc desc = new MessageDesc();
         ProtocolBean bean = new ProtocolBean();
-        bean.setGroupId(myName);
+        bean.setZkName(myName);
         bean.setCommand(CommonConstant.Command.BROKER_SUBJECT_REGISTER);
         List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
         client.write(bytes, false);
