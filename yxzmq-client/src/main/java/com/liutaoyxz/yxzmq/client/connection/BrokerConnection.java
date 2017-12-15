@@ -1,9 +1,11 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
+import com.liutaoyxz.yxzmq.common.Address;
 import com.liutaoyxz.yxzmq.common.enums.ConnectStatus;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
+import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
 import com.liutaoyxz.yxzmq.io.util.BeanUtil;
 import io.netty.buffer.ByteBuf;
@@ -62,16 +64,17 @@ public class BrokerConnection {
 
     private YxzNettyConnection connection;
 
+    private ReadContainer readContainer;
+
     public BrokerConnection(String name, YxzNettyConnection connection) {
         this.connection = connection;
         this.name = name;
-        String[] split = StringUtils.split(name, "-");
-        String hostIp = split[0];
-        this.order = split[1];
-        String[] address = StringUtils.split(hostIp, ":");
-        this.ip = address[0];
-        this.port = Integer.valueOf(address[1]);
+        Address address = Address.createAddress(name);
+        this.order = address.getOrder();
+        this.ip = address.getIp();
+        this.port = address.getPort();
         this.status = NOT_CONNECT;
+        this.readContainer = new ReadContainer();
     }
 
     /**
@@ -126,6 +129,10 @@ public class BrokerConnection {
         return send(bytes,false);
     }
 
+    public void registerSuccess(){
+        this.status = REGISTERED;
+    }
+
     public ConnectStatus getStatus() {
         return status;
     }
@@ -149,9 +156,14 @@ public class BrokerConnection {
         if (sync) {
             future.sync();
         }
-        log.info("future {}", future);
         return true;
     }
+
+    public List<ProtocolBean> read(byte[] bytes){
+        this.readContainer.read(bytes);
+        return readContainer.flush();
+    }
+
 
     public String getName() {
         return name;

@@ -19,7 +19,8 @@ public enum JMSErrorEnum {
     QUEUE_NOT_DEFINE("0006","queue not define"),
     OP_NOT_SUPPORT("0007","operator not support"),
     CONNECTION_START_ERROR("0008","connection start error"),
-    NO_BROKER("0009","no broker")
+    NO_BROKER("0009","no broker"),
+    CONNECTION_ALREADY_STARTED("0010","connection has already started")
     ;
 
 

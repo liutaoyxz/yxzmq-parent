@@ -8,6 +8,7 @@ import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 import com.liutaoyxz.yxzmq.broker.client.ServerClientManager;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.BrokerListener;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkBrokerRoot;
+import com.liutaoyxz.yxzmq.common.Address;
 import com.liutaoyxz.yxzmq.io.derby.DerbyTemplate;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -158,5 +159,10 @@ public class NettyServer implements Server, Callable<ChannelFuture> {
 //        channelFuture.channel().closeFuture().sync();
         ServerClient client = ServerClientManager.addClient(channel);
         return client;
+    }
+
+    @Override
+    public ServerClient connect(Address address) throws InterruptedException {
+        return connect(address.getIp(),address.getPort());
     }
 }

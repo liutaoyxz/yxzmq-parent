@@ -3,8 +3,10 @@ package com.liutaoyxz.yxzmq.broker.server;
 import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.ServerConfig;
 import com.liutaoyxz.yxzmq.broker.channelhandler.ChannelHandler;
+import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 import com.liutaoyxz.yxzmq.broker.datahandler.ChannelReader;
 import com.liutaoyxz.yxzmq.broker.datahandler.DefaultChannelReader;
+import com.liutaoyxz.yxzmq.common.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +127,8 @@ public class DefaultServer extends AbstractServer {
         }
     }
 
-
-
+    @Override
+    public ServerClient connect(Address address) throws InterruptedException {
+        return null;
+    }
 }

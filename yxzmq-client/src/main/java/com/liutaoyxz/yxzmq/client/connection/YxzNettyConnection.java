@@ -1,9 +1,13 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
+import com.liutaoyxz.yxzmq.client.YxzClientContext;
+import com.liutaoyxz.yxzmq.client.session.YxzNettySession;
 import com.liutaoyxz.yxzmq.cluster.broker.Broker;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ZkClientRoot;
 import com.liutaoyxz.yxzmq.common.enums.ConnectStatus;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
+import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
+import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +16,7 @@ import javax.jms.JMSException;
 import javax.jms.Session;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Condition;
@@ -50,7 +55,11 @@ public class YxzNettyConnection extends AbstractConnection {
 
     private ReentrantLock lock = new ReentrantLock();
 
+    /** 等待broker注册成功 **/
     private Condition brokerCondition = lock.newCondition();
+
+    /** 关闭等待 **/
+    private Condition closeCondition = lock.newCondition();
 
     private ZkClientRoot root;
 
@@ -61,15 +70,21 @@ public class YxzNettyConnection extends AbstractConnection {
 
     /** 这个连接在zookeeper端的名字 **/
     private String myName;
+    /** 是否启动 **/
+    private boolean started = false;
 
     private YxzNettyConnectionFactory factory;
-    /** 所有的broker **/
+
+    private YxzClientContext ctx;
+
+    /** 所有的broker,id和conn 对应 **/
     private ConcurrentHashMap<String,BrokerConnection> allBrokers = new ConcurrentHashMap<>();
-    /** 可用的broker,我已经注册成功的 **/
+    /** 可用的broker,我已经注册成功的 ,zkName 和 conn 对应 **/
     private ConcurrentHashMap<String,BrokerConnection> readyBrokers = new ConcurrentHashMap<>();
 
     YxzNettyConnection(String zookeeperStr,YxzNettyConnectionFactory factory){
         this.factory = factory;
+        this.ctx = new YxzClientContext(factory);
         this.zookeeperStr = zookeeperStr;
         this.listener = new ZkClientListener();
         this.sessionExecutor = new ThreadPoolExecutor(10, Integer.MAX_VALUE, 10L, TimeUnit.SECONDS,
@@ -84,9 +99,18 @@ public class YxzNettyConnection extends AbstractConnection {
 
     }
 
+    /**
+     * create session
+     * @param transacted 是否是事务session
+     * @param acknowledgeMode 问答模式
+     * @return
+     * @throws JMSException
+     */
     @Override
     public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
-        return null;
+        ctx.setConnection(this);
+        YxzNettySession session = new YxzNettySession(ctx,transacted,acknowledgeMode);
+        return session;
     }
 
     /**
@@ -102,6 +126,9 @@ public class YxzNettyConnection extends AbstractConnection {
     @Override
     public void start() throws JMSException {
         lock.lock();
+        if (started){
+            throw JMSErrorEnum.CONNECTION_ALREADY_STARTED.exception();
+        }
         try {
             if (root == null){
                 root = ZkClientRoot.createRoot(listener,zookeeperStr);
@@ -112,7 +139,11 @@ public class YxzNettyConnection extends AbstractConnection {
                     throw JMSErrorEnum.NO_BROKER.exception();
                 }
                 waitBroker();
+                log.info("client [{}] started ... brokers is {}",myName,readyBrokerNames());
+                started = true;
             }
+        }catch (JMSException e){
+          throw e;
         } catch (Exception e) {
             log.error("start error ",e);
             throw JMSErrorEnum.CONNECTION_START_ERROR.exception(e);
@@ -120,6 +151,16 @@ public class YxzNettyConnection extends AbstractConnection {
             lock.unlock();
         }
 
+    }
+
+
+    private List<String> readyBrokerNames(){
+        List<String> result = new ArrayList<>();
+        ConcurrentHashMap.KeySetView<String, BrokerConnection> view = readyBrokers.keySet();
+        for (String zkName : view){
+            result.add(zkName);
+        }
+        return result;
     }
 
     /**
@@ -167,7 +208,41 @@ public class YxzNettyConnection extends AbstractConnection {
             return false;
         }
         conn.setChannel(channel);
+        allBrokers.put(conn.id(),conn);
         return true;
+    }
+
+    public void read(byte[] bytes,String id) throws InterruptedException {
+        BrokerConnection broker = allBrokers.get(id);
+        List<ProtocolBean> beans = broker.read(bytes);
+        log.info("read beans {}",beans);
+        for (ProtocolBean bean : beans){
+            handleBean(bean,id);
+        }
+    }
+
+
+    public void handleBean(ProtocolBean bean,String id) throws InterruptedException {
+        int command = bean.getCommand();
+        String zkName = bean.getZkName();
+        BrokerConnection conn = allBrokers.get(id);
+        switch (command){
+
+            case CommonConstant.Command.REGISTER_SUCCESS:
+                //注册成功
+                conn.registerSuccess();
+                readyBrokers.put(conn.getName(),conn);
+                log.info("register on broker [{}] success",conn.getName());
+                signalBroker();
+                break;
+            case CommonConstant.Command.SEND:
+                //发送消息
+
+
+                break;
+            default:
+                break;
+        }
     }
 
     private int connectBrokers(List<Broker> brokers) throws InterruptedException {
@@ -181,4 +256,16 @@ public class YxzNettyConnection extends AbstractConnection {
         }
         return result;
     }
+
+    private void signalBroker() throws InterruptedException {
+        if (!haveReadyBroker){
+            lock.lock();
+            try {
+                brokerCondition.signalAll();
+            }finally {
+                lock.unlock();
+            }
+        }
+    }
+
 }

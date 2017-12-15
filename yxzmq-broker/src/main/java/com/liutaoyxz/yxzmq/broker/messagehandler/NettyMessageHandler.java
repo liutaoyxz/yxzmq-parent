@@ -35,6 +35,8 @@ public class NettyMessageHandler {
         final int command = bean.getCommand();
         final MessageDesc desc = getDesc(bean);
         final String msg = getMessage(bean);
+        String zkName = bean.getZkName();
+        String id = client.id();
         switch (command){
             case CommonConstant.Command.SEND:
                 //发送过来的消息
@@ -44,10 +46,12 @@ public class NettyMessageHandler {
 
             case CommonConstant.Command.BROKER_SUBJECT_REGISTER:
                 //主体注册
-                String newSubjectId = client.id();
-                String subjectName = bean.getZkName();
-                ServerClientManager.subjectChange(newSubjectId,subjectName);
+                ServerClientManager.subjectChange(id,zkName);
                 break;
+            case CommonConstant.Command.CLIENT_REGISTER:
+                //客户端注册
+                ServerClientManager.clientRegister(id,zkName);
+
             default:
                 log.debug("handler protocolBean error,command is {}",command);
                 break;

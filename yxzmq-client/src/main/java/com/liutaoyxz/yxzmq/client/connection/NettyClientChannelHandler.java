@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -29,10 +30,12 @@ public class NettyClientChannelHandler extends SimpleChannelInboundHandler<byte[
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        byte[] bytes = (byte[]) msg;
+        ByteBuf buf = (ByteBuf) msg;
+        byte[] bytes = new byte[buf.readableBytes()];
+        buf.readBytes(bytes);
         Channel channel = ctx.channel();
         String id = channel.id().toString();
-        log.info("read msg {}",msg);
+        this.conn.read(bytes,id);
     }
 
     @Override

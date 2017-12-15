@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.client;
 
 import com.liutaoyxz.yxzmq.broker.server.NettyServer;
+import com.liutaoyxz.yxzmq.common.Address;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
@@ -12,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,9 +32,9 @@ public class ServerClientManager {
     private static final ConcurrentHashMap<String, ServerClient> ID_CLIENT = new ConcurrentHashMap<>();
 
     /**
-     *  name  和 serverClient 对应的映射(注册过的channel 才会有name)
+     * name  和 serverClient 对应的映射(注册过的channel 才会有name)
      */
-    private static final ConcurrentHashMap<String,ServerClient> NAME_CLIENT = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, ServerClient> NAME_CLIENT = new ConcurrentHashMap<>();
 
     public static final Logger log = LoggerFactory.getLogger(ServerClientManager.class);
 
@@ -64,16 +67,14 @@ public class ServerClientManager {
 
     /**
      * mirror 发生变化
+     *
      * @param mirrorName
      * @throws InterruptedException
      */
     public synchronized static void setMirror(String mirrorName) throws InterruptedException, IOException {
         NettyServer server = NettyServer.getServer();
-        String[] strings = StringUtils.split(mirrorName, "-");
-        String[] ss = StringUtils.split(strings[0], ":");
-        String hostName = ss[0];
-        int port = Integer.valueOf(ss[1]);
-        ServerClient client = server.connect(hostName, port);
+        Address address = Address.createAddress(mirrorName);
+        ServerClient client = server.connect(address);
         client.setName(mirrorName);
         client.setIsBroker(true);
         client.ready();
@@ -90,28 +91,32 @@ public class ServerClientManager {
     /**
      * 由主体发送消息进行通知
      * 主体发生了变化,通知derby将之前的subject  数据存储到内存,替换subject
+     *
      * @param newSubjectId 新的subjectId
      */
-    public synchronized static void subjectChange(String newSubjectId,String subjectName) throws IOException {
+    public synchronized static void subjectChange(String newSubjectId, String subjectName) throws IOException {
         ServerClient newClient = ID_CLIENT.get(newSubjectId);
         newClient.setName(subjectName);
-        NAME_CLIENT.put(subjectName,newClient);
-        log.info("subject change,new subject is {}",newClient);
+        NAME_CLIENT.put(subjectName, newClient);
+        log.info("subject change,new subject is {}", newClient);
         String oldSubjectId = ServerClientManager.subjectId;
-        if (StringUtils.isBlank(oldSubjectId)){
+        if (StringUtils.isBlank(oldSubjectId)) {
             //之前没有subject
             ServerClientManager.subjectId = newSubjectId;
-            return ;
+            return;
         }
+
         ServerClientManager.subjectId = newSubjectId;
         ServerClient client = ID_CLIENT.get(oldSubjectId);
-        if (client != null){
+        if (client != null) {
             client.close();
             String oldSubjectName = client.name();
+            if (subjectName.equals(oldSubjectName)) {
+                //同一台 broker,不用读数据
+                return;
+            }
             //todo 通知derby,之前的subject 换了,把数据库中的数据读出来
-            log.info("notify derby read old subject [{}] data to memory",client);
-
-
+            log.info("notify derby read old subject [{}] data to memory", client);
 
 
         }
@@ -119,20 +124,48 @@ public class ServerClientManager {
 
     /**
      * 根据name 列表查询 ServerClient  列表
+     *
      * @param clients
      * @return
      */
-    public static List<ServerClient> getServerClients(List<String> clients){
+    public static List<ServerClient> getServerClients(List<String> clients) {
         List<ServerClient> result = new ArrayList<>();
-        for (String s :clients){
+        for (String s : clients) {
             ServerClient client = NAME_CLIENT.get(s);
-            if (client != null){
+            if (client != null) {
                 result.add(client);
             }
         }
         return result;
     }
 
+    /**
+     * 客户端注册
+     *
+     * @param id
+     * @param zkName
+     * @throws InterruptedException
+     */
+    public static void clientRegister(String id, String zkName) {
+        ServerClient client = ID_CLIENT.get(id);
+        if (client == null) {
+            log.error("no client,id is {},zkName is {}", id, zkName);
+        }
+        client.setName(zkName);
+        Metadata metadata = new Metadata();
+        MessageDesc desc = new MessageDesc();
+        ProtocolBean bean = new ProtocolBean();
+        bean.setCommand(CommonConstant.Command.REGISTER_SUCCESS);
+        List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
+        try {
+            client.write(bytes, false);
+            client.ready();
+            NAME_CLIENT.put(zkName, client);
+        } catch (InterruptedException e) {
+            log.error("client register error", e);
+            //发送消息失败,什么也不做
+        }
+    }
 
 
     public static void setMyName(String myName) {

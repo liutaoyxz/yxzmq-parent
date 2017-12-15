@@ -27,6 +27,11 @@ public interface ServerClient extends Closeable {
      */
     void read(List<byte[]> bytes,boolean sync);
 
+    /**
+     * 读数据
+     * @param bytes
+     * @throws IOException
+     */
     void read(byte[] bytes) throws IOException;
 
     /**

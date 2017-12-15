@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.client;
 
 import com.liutaoyxz.yxzmq.broker.messagehandler.NettyMessageHandler;
+import com.liutaoyxz.yxzmq.common.enums.ConnectStatus;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import io.netty.buffer.ByteBuf;
@@ -15,6 +16,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.*;
+
+import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.CLOSED;
+import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.NOT_REGISTER;
+import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.REGISTERED;
 
 /**
  * @author Doug Tao
@@ -37,6 +42,9 @@ public class BrokerServerClient implements ServerClient {
 
     private boolean isBroker;
 
+    /** 连接状态  **/
+    private ConnectStatus status;
+
     private ExecutorService readExecutor;
 
     private ReadContainer readContainer;
@@ -56,6 +64,7 @@ public class BrokerServerClient implements ServerClient {
         this.port = channel.remoteAddress().getPort();
         this.id = channel.id().toString();
         this.channel = channel;
+        this.status = NOT_REGISTER;
         this.isBroker = isBroker;
         this.readContainer = new ReadContainer();
         this.readExecutor = new ThreadPoolExecutor(1, 1, 5L,
@@ -83,7 +92,7 @@ public class BrokerServerClient implements ServerClient {
         if (sync) {
             future.sync();
         }
-        log.info("future {}", future);
+        log.debug("future {}", future);
         return true;
     }
 
@@ -139,6 +148,7 @@ public class BrokerServerClient implements ServerClient {
     public void close() throws IOException {
         if (channel != null && channel.isActive()) {
             this.available = false;
+            this.status = CLOSED;
             channel.close();
         }
     }
@@ -151,6 +161,7 @@ public class BrokerServerClient implements ServerClient {
     @Override
     public void ready() {
         this.available = true;
+        this.status = REGISTERED;
     }
 
     @Override

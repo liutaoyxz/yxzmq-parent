@@ -107,7 +107,7 @@ public class ZkClientRoot {
                 log.info("queues create result is {}", queuesCreate);
             }
 
-            log.info("brokersStat is {},clientsStat is {},topicsStat is {},queuesStat is {}",
+            log.info("\rbrokersStat is {}\rclientsStat is {}\rtopicsStat is {}\rqueuesStat is {}",
                     brokersStat, clientsStat, topicsStat, queuesStat);
         }
         return true;
@@ -132,7 +132,7 @@ public class ZkClientRoot {
         ClientBrokerWatcher clientBrokerWatcher = new ClientBrokerWatcher(this);
         //获取brokers下的 children,第一次获得到children之后遍历children的数据,判断是否为ready,采用同步的方式
         List<String> brokerChildren = zk.getChildren(ZkConstant.Path.BROKERS, clientBrokerWatcher);
-        log.info("brokers children {}", brokerChildren);
+        log.info("brokers {}", brokerChildren);
         createBrokers(brokerChildren);
         register();
         result.addAll(READY_BROKER);

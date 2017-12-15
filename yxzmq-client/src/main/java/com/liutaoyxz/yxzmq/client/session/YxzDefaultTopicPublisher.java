@@ -10,8 +10,6 @@ import javax.jms.*;
 public class YxzDefaultTopicPublisher extends AbstractTopicPublisher {
 
 
-
-
     private Topic topic;
 
     private YxzDefaultSession session;

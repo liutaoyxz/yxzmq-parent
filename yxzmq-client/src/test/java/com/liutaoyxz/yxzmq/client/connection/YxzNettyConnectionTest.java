@@ -29,4 +29,11 @@ public class YxzNettyConnectionTest {
 
     }
 
+
+    public static void main(String[] args) throws Exception{
+        YxzNettyConnectionFactory factory = new YxzNettyConnectionFactory("127.0.0.1:2181");
+        Connection conn = factory.createConnection();
+        conn.start();
+    }
+
 }

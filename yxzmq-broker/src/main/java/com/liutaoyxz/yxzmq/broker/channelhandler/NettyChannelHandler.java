@@ -97,7 +97,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
 
-        log.info("channelReadComplete");
+        log.debug("channelReadComplete");
     }
 
     @Override

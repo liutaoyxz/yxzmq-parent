@@ -20,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Doug Tao
@@ -36,6 +37,10 @@ public class YxzNettyConnectionFactory implements ConnectionFactory {
 
     private String zookeeperStr;
 
+    private ReentrantLock lock = new ReentrantLock();
+
+    private volatile boolean started = false;
+
     /**
      * 定时任务,心跳测试,暂时没用,只是保证程序不退出
      */
@@ -50,13 +55,6 @@ public class YxzNettyConnectionFactory implements ConnectionFactory {
 
     public YxzNettyConnectionFactory(String zookeeperStr) {
         this.zookeeperStr = zookeeperStr;
-        startNio();
-        executor.schedule(new Runnable() {
-            @Override
-            public void run() {
-                log.debug("factory started");
-            }
-        }, 0L, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -75,6 +73,7 @@ public class YxzNettyConnectionFactory implements ConnectionFactory {
 
     @Override
     public Connection createConnection() throws JMSException {
+        checkStart();
         return new YxzNettyConnection(this.zookeeperStr,this);
     }
 
@@ -83,6 +82,25 @@ public class YxzNettyConnectionFactory implements ConnectionFactory {
         return null;
     }
 
+    private void checkStart(){
+        if (!started){
+            lock.lock();
+            try {
+                if (!started){
+                    startNio();
+                    executor.schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            log.debug("factory started");
+                        }
+                    }, 0L, TimeUnit.MILLISECONDS);
+                    started = true;
+                }
+            }finally {
+                lock.unlock();
+            }
+        }
+    }
 
     private void startNio() {
         bootstrap = new Bootstrap();
