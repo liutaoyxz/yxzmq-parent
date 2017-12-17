@@ -3,7 +3,6 @@ package com.liutaoyxz.yxzmq.client;
 import com.liutaoyxz.yxzmq.client.connection.YxzNettyConnection;
 import com.liutaoyxz.yxzmq.client.connection.YxzNettyConnectionFactory;
 import com.liutaoyxz.yxzmq.client.session.YxzNettySession;
-import com.liutaoyxz.yxzmq.client.session.YxzNettyTopicPublisher;
 
 import javax.jms.Queue;
 import javax.jms.Topic;
@@ -28,6 +27,12 @@ public class YxzClientContext {
 
     public YxzClientContext(YxzNettyConnectionFactory factory) {
         this.factory = factory;
+    }
+
+    public YxzClientContext createCtx(YxzNettyConnection conn){
+        YxzClientContext newCtx = new YxzClientContext(this.factory);
+        newCtx.setConnection(conn);
+        return newCtx;
     }
 
     public Queue queue() {
