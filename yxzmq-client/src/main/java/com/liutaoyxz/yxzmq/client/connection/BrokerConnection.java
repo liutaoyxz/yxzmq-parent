@@ -11,22 +11,19 @@ import com.liutaoyxz.yxzmq.io.util.BeanUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.NOT_CONNECT;
-import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.NOT_REGISTER;
-import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.REGISTERED;
+import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.*;
 
 /**
  * @author Doug Tao
  * @Date: 16:34 2017/12/13
  * @Description: broker的连接对象
  */
-public class BrokerConnection {
+public class BrokerConnection implements AutoCloseable{
 
     private static final Logger log = LoggerFactory.getLogger(BrokerConnection.class);
 
@@ -77,18 +74,6 @@ public class BrokerConnection {
         this.readContainer = new ReadContainer();
     }
 
-    /**
-     * 连接到broker
-     *
-     * @return
-     */
-    private boolean connect() {
-        if (status == REGISTERED || status == NOT_REGISTER) {
-            return true;
-        }
-
-        return false;
-    }
 
     public void setChannel(NioSocketChannel channel) {
         this.channel = channel;
@@ -140,7 +125,7 @@ public class BrokerConnection {
     /**
      * 发送数据
      *
-     * @param data
+     * @param bytes
      * @return
      */
     public boolean send(List<byte[]> bytes,boolean sync) throws InterruptedException {
@@ -166,6 +151,15 @@ public class BrokerConnection {
         return readContainer.flush();
     }
 
+    public boolean isActive(){
+        return status == REGISTERED && channel.isActive();
+    }
+
+    @Override
+    public void close() throws Exception {
+        this.status = CLOSED;
+        channel.close();
+    }
 
     public String getName() {
         return name;

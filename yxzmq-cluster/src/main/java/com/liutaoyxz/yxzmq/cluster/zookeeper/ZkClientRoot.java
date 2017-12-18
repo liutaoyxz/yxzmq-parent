@@ -463,7 +463,7 @@ public class ZkClientRoot {
 
     /**
      * 取消监听
-     * @param topicName
+     * @param queueName
      */
     public void cancelListen(String queueName){
         if (StringUtils.isBlank(queueName)){

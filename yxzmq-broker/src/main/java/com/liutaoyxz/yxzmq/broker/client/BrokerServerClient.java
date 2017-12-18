@@ -5,9 +5,6 @@ import com.liutaoyxz.yxzmq.common.enums.ConnectStatus;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
@@ -17,9 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.*;
 
-import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.CLOSED;
-import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.NOT_REGISTER;
-import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.REGISTERED;
+import static com.liutaoyxz.yxzmq.common.enums.ConnectStatus.*;
 
 /**
  * @author Doug Tao
@@ -108,7 +103,7 @@ public class BrokerServerClient implements ServerClient {
     public void read(byte[] bytes) throws IOException {
         this.readContainer.read(bytes);
         List<ProtocolBean> beans = this.readContainer.flush();
-        log.info("read beans :{}", beans);
+        log.debug("read beans :{}", beans);
         for (ProtocolBean b : beans){
             NettyMessageHandler.handlerProtocolBean(b,this);
         }
@@ -149,9 +144,9 @@ public class BrokerServerClient implements ServerClient {
 
     @Override
     public void close() throws IOException {
+        this.available = false;
+        this.status = CLOSED;
         if (channel != null && channel.isActive()) {
-            this.available = false;
-            this.status = CLOSED;
             channel.close();
         }
     }

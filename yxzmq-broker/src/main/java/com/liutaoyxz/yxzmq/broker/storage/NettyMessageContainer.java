@@ -24,12 +24,17 @@ public class NettyMessageContainer {
     /**
      * queue 消息的订阅者
      */
-    private static final ConcurrentHashMap<String,BlockingQueue<ServerClient>> QUEUE_LISTENERS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, BlockingQueue<ServerClient>> QUEUE_LISTENERS = new ConcurrentHashMap<>();
+
+    /**
+     * 固定不变的 queue 和 listeners 的映射
+     */
+    private static final ConcurrentHashMap<String, BlockingQueue<ServerClient>> FIXED_QUEUE_LISTENERS = new ConcurrentHashMap<>();
 
     /**
      * topic 订阅者
      */
-    private static final ConcurrentHashMap<String,List<ServerClient>> TOPIC_SUBSCRIBERS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, List<ServerClient>> TOPIC_SUBSCRIBERS = new ConcurrentHashMap<>();
 
     /**
      * 队列是否取消
@@ -63,31 +68,36 @@ public class NettyMessageContainer {
 
     /**
      * 设置 某一主题的订阅者
+     *
      * @param topicName
      * @param subscribers
      */
-    public static void setTopicSubscribers(String topicName, List<ServerClient> subscribers){
-        if (StringUtils.isBlank(topicName)){
+    public static void setTopicSubscribers(String topicName, List<ServerClient> subscribers) {
+        if (StringUtils.isBlank(topicName)) {
             return;
         }
-        log.info("set topic subscribers,queue name is [{}] , subscribers is {}",topicName,subscribers);
-        TOPIC_SUBSCRIBERS.put(topicName,subscribers);
+        log.info("set topic subscribers,queue name is [{}] , subscribers is {}", topicName, subscribers);
+        TOPIC_SUBSCRIBERS.put(topicName, subscribers);
     }
 
     /**
      * 设置某一 name下的 queue 监听者
+     *
      * @param queueName
      * @param listeners
      */
-    public static void setQueueListeners(String queueName,BlockingQueue<ServerClient> listeners){
-        if (StringUtils.isBlank(queueName)){
+    public static void setQueueListeners(String queueName, BlockingQueue<ServerClient> listeners) {
+        if (StringUtils.isBlank(queueName)) {
             return;
         }
         checkQueue(queueName);
-        log.info("set queue listeners,queue name is [{}] , listeners is {}",queueName,listeners);
+        log.info("set queue listeners,queue name is [{}] , listeners is {}", queueName, listeners);
         BlockingQueue<ServerClient> ls = QUEUE_LISTENERS.get(queueName);
+        BlockingQueue<ServerClient> fls = FIXED_QUEUE_LISTENERS.get(queueName);
         ls.clear();
+        fls.clear();
         ls.addAll(listeners);
+        fls.addAll(listeners);
     }
 
     private static void checkQueue(String queueName) {
@@ -99,6 +109,7 @@ public class NettyMessageContainer {
                 PP_HOUSE.put(queueName, messages);
                 BlockingDeque<ServerClient> clients = new LinkedBlockingDeque<>();
                 QUEUE_LISTENERS.put(queueName, clients);
+                FIXED_QUEUE_LISTENERS.put(queueName, clients);
                 AtomicBoolean cancel = new AtomicBoolean(false);
                 QNAME_CANCEL.put(queueName, cancel);
                 NettyQueueListenTask task = new NettyQueueListenTask(messages, clients, cancel);
@@ -110,7 +121,7 @@ public class NettyMessageContainer {
 
     }
 
-    public static void saveQueueMessage(String queueName,QueueMessage message){
+    public static void saveQueueMessage(String queueName, QueueMessage message) {
         checkQueue(queueName);
         BlockingDeque<QueueMessage> queue = PP_HOUSE.get(queueName);
         try {
@@ -119,6 +130,17 @@ public class NettyMessageContainer {
             log.error("save message error", e);
         }
         log.debug("receive message {}", message);
+    }
+
+    public static boolean checkQueueListener(String queueName,ServerClient client){
+        if (StringUtils.isBlank(queueName) || !client.available()){
+            return false;
+        }
+        BlockingQueue<ServerClient> cs = FIXED_QUEUE_LISTENERS.get(queueName);
+        if (cs == null || cs.isEmpty()){
+            return false;
+        }
+        return cs.contains(client);
     }
 
 }

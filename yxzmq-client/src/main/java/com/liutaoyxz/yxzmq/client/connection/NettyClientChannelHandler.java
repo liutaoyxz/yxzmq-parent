@@ -45,7 +45,9 @@ public class NettyClientChannelHandler extends SimpleChannelInboundHandler<byte[
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-
+        Channel channel = ctx.channel();
+        String id = channel.id().toString();
+        conn.delBroker(id);
     }
 
     @Override

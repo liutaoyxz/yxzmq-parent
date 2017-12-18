@@ -199,24 +199,32 @@ public class YxzNettySession extends AbstractSession {
         if (StringUtils.isBlank(topicName) || listener == null){
             throw new NullPointerException();
         }
-        List<MessageListener> listeners = topicListeners.get(topicName);
-        if (listeners == null){
-            listeners = new CopyOnWriteArrayList<>();
-            ctx.connection().subscribe(topicName,this);
+        synchronized (topicListeners){
+            List<MessageListener> listeners = topicListeners.get(topicName);
+            if (listeners == null){
+                listeners = new CopyOnWriteArrayList<>();
+                topicListeners.put(topicName,listeners);
+                ctx.connection().subscribe(topicName,this);
+            }
+            listeners.add(listener);
         }
-        listeners.add(listener);
+
     }
 
     public void addQueueListener(String queueName,MessageListener listener){
         if (StringUtils.isBlank(queueName) || listener == null){
             throw new NullPointerException();
         }
-        BlockingDeque<MessageListener> listeners = queueListeners.get(queueName);
-        if (listeners == null){
-            listeners = new LinkedBlockingDeque<>();
-            ctx.connection().listen(queueName,this);
+        synchronized (queueListeners){
+            BlockingDeque<MessageListener> listeners = queueListeners.get(queueName);
+            if (listeners == null){
+                listeners = new LinkedBlockingDeque<>();
+                queueListeners.put(queueName,listeners);
+                ctx.connection().listen(queueName,this);
+            }
+            listeners.add(listener);
         }
-        listeners.add(listener);
+
     }
 
     /**
@@ -279,6 +287,25 @@ public class YxzNettySession extends AbstractSession {
         }
     }
 
+
+    public boolean handleQueueMessage(String queueName,String text){
+        try {
+            checkClose();
+        } catch (JMSException e) {
+            return false;
+        }
+        BlockingDeque<MessageListener> listeners = queueListeners.get(queueName);
+        if (listeners == null || listeners.isEmpty()){
+            return false;
+        }
+        MessageListener l = listeners.poll();
+        if (l != null){
+            l.onMessage(new YxzTextMessage(text));
+            listeners.add(l);
+            return true;
+        }
+        return false;
+    }
 
 
     /**

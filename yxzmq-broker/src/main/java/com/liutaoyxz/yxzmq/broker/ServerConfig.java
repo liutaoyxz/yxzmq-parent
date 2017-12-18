@@ -6,9 +6,9 @@ package com.liutaoyxz.yxzmq.broker;
  */
 public class ServerConfig {
 
-    private int port = 11172;
+    private int port = 11173;
 
-    private String dataDir = "/Users/liutao/yxzmqData2";
+    private String dataDir = "/Users/liutao/yxzmqData3";
 
     private String zkConnectStr = "127.0.0.1:2181";
 

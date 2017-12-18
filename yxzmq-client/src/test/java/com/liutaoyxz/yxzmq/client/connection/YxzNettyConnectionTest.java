@@ -5,8 +5,6 @@ import org.junit.Test;
 import javax.jms.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Doug Tao
  * @Date: 17:19 2017/12/14
@@ -48,7 +46,8 @@ public class YxzNettyConnectionTest {
                 }
             }
         });
-//        session.close();
+        Thread.sleep(30000);
+        session.close();
 
     }
 

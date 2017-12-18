@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.storage;
 
 import com.liutaoyxz.yxzmq.broker.client.ServerClient;
+import com.liutaoyxz.yxzmq.broker.client.ServerClientManager;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
@@ -14,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -42,34 +42,42 @@ public class NettyQueueListenTask implements Runnable {
     public void run() {
         while (!cancel.get()) {
             try {
-                ServerClient client = clients.take();
-                QueueMessage message = messages.take();
-                if (!client.available()) {
-                    //client 不可用,不管他了
-                    messages.addLast(message);
-                    continue;
-                } else {
-                    String text = message.getText();
-                    String queueName = message.getDesc().getTitle();
-                    ProtocolBean bean = new ProtocolBean();
-                    bean.setCommand(CommonConstant.Command.SEND);
-                    bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
-                    MessageDesc desc = new MessageDesc();
-                    desc.setType(CommonConstant.MessageType.QUEUE);
-                    desc.setTitle(queueName);
-                    Metadata metadata = new Metadata();
-                    List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
-                    if (!client.write(bytes, true)){
-                        //发送失败了
+                    ServerClient client = clients.take();
+                    QueueMessage message = messages.take();
+                    if (!NettyMessageContainer.checkQueueListener(message.getDesc().getTitle(),client)) {
+                        //client 不可用,不管他了
                         messages.addLast(message);
-                        continue;
+                    } else {
+                        String text = message.getText();
+                        String queueName = message.getDesc().getTitle();
+                        ProtocolBean bean = new ProtocolBean();
+                        bean.setCommand(CommonConstant.Command.SEND);
+                        bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
+                        MessageDesc desc = new MessageDesc();
+                        desc.setType(CommonConstant.MessageType.QUEUE);
+                        desc.setTitle(queueName);
+                        Metadata metadata = new Metadata();
+                        List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
+                        boolean write = false;
+                        try {
+                            write = client.write(bytes, true);
+                        }catch (Exception e){
+                            log.error("write data error",e);
+                            messages.addLast(message);
+                            if (ServerClientManager.checkServerClient(client)){
+                                clients.add(client);
+                            }
+                            continue;
+                        }
+                        if (!write){
+                            //发送失败了
+                            messages.addLast(message);
+                            continue;
+                        }
+                        clients.add(client);
                     }
-                    clients.add(client);
-                }
             } catch (InterruptedException e) {
                 log.debug("queue task error", e);
-            } finally {
-
             }
         }
     }

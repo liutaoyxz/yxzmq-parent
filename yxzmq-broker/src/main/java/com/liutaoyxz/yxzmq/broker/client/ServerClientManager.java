@@ -13,8 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +58,10 @@ public class ServerClientManager {
     public static ServerClient delClient(NioSocketChannel channel) throws IOException {
         String id = channel.id().toString();
         ServerClient client = ID_CLIENT.remove(id);
+        String name = client.name();
+        if (StringUtils.isNotBlank(name)){
+            NAME_CLIENT.remove(name);
+        }
         client.close();
         log.info("client disconnect,client is {}", client);
         return client;
@@ -137,6 +139,20 @@ public class ServerClientManager {
             }
         }
         return result;
+    }
+
+    public static boolean checkServerClient(ServerClient client){
+        if (client != null){
+            if (!client.available()){
+                ID_CLIENT.remove(client.id());
+                if (StringUtils.isNotBlank(client.name())){
+                    NAME_CLIENT.remove(client.name());
+                }
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
