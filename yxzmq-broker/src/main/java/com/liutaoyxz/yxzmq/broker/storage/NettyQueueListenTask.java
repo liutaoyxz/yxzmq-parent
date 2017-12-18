@@ -42,40 +42,40 @@ public class NettyQueueListenTask implements Runnable {
     public void run() {
         while (!cancel.get()) {
             try {
-                    ServerClient client = clients.take();
-                    QueueMessage message = messages.take();
-                    if (!NettyMessageContainer.checkQueueListener(message.getDesc().getTitle(),client)) {
-                        //client 不可用,不管他了
+                ServerClient client = clients.take();
+                QueueMessage message = messages.take();
+                if (!NettyMessageContainer.checkQueueListener(message.getDesc().getTitle(), client)) {
+                    //client 不可用,不管他了
+                    messages.addLast(message);
+                } else {
+                    String text = message.getText();
+                    String queueName = message.getDesc().getTitle();
+                    ProtocolBean bean = new ProtocolBean();
+                    bean.setCommand(CommonConstant.Command.SEND);
+                    bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
+                    MessageDesc desc = new MessageDesc();
+                    desc.setType(CommonConstant.MessageType.QUEUE);
+                    desc.setTitle(queueName);
+                    Metadata metadata = new Metadata();
+                    List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
+                    boolean write = false;
+                    try {
+                        write = client.write(bytes, true);
+                    } catch (Exception e) {
+                        log.error("write data error", e);
                         messages.addLast(message);
-                    } else {
-                        String text = message.getText();
-                        String queueName = message.getDesc().getTitle();
-                        ProtocolBean bean = new ProtocolBean();
-                        bean.setCommand(CommonConstant.Command.SEND);
-                        bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
-                        MessageDesc desc = new MessageDesc();
-                        desc.setType(CommonConstant.MessageType.QUEUE);
-                        desc.setTitle(queueName);
-                        Metadata metadata = new Metadata();
-                        List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
-                        boolean write = false;
-                        try {
-                            write = client.write(bytes, true);
-                        }catch (Exception e){
-                            log.error("write data error",e);
-                            messages.addLast(message);
-                            if (ServerClientManager.checkServerClient(client)){
-                                clients.add(client);
-                            }
-                            continue;
+                        if (ServerClientManager.checkServerClient(client)) {
+                            clients.add(client);
                         }
-                        if (!write){
-                            //发送失败了
-                            messages.addLast(message);
-                            continue;
-                        }
-                        clients.add(client);
+                        continue;
                     }
+                    if (!write) {
+                        //发送失败了
+                        messages.addLast(message);
+                        continue;
+                    }
+                    clients.add(client);
+                }
             } catch (InterruptedException e) {
                 log.debug("queue task error", e);
             }
