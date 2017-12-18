@@ -228,14 +228,25 @@ public class YxzNettyConnection extends AbstractConnection {
         }
     }
 
-    public boolean write(List<byte[]> bytes) throws InterruptedException {
-        BrokerConnection conn = applyBrokers.take();
-        boolean send = conn.send(bytes, true);
-        applyBrokers.add(conn);
-        return send;
+    public boolean write(List<byte[]> bytes) {
+        BrokerConnection conn = null;
+        try {
+            conn = applyBrokers.take();
+            boolean send = conn.send(bytes, true);
+            applyBrokers.add(conn);
+            return send;
+        }catch (InterruptedException e){
+            log.error("write data error",e);
+            return false;
+        } catch (Exception e){
+            log.error("write data error",e);
+            return false;
+        }
     }
 
-
+    private void delReadyBroker(BrokerConnection conn){
+        readyBrokers.remove(conn.getName());
+    }
 
     /**
      * 处理收到的消息
