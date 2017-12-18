@@ -95,7 +95,6 @@ public class QueueCallback implements AsyncCallback.ChildrenCallback {
             }
         }
         if (children.size() > 0){
-            // TODO 新增的queue,设置异步监视
             log.info("there is new queue, new queue is {}",children);
             for (String child : children){
                 QueueChildrenCallback.watchQueue(child);

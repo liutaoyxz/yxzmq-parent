@@ -4,6 +4,7 @@ import com.liutaoyxz.yxzmq.broker.Client;
 import com.liutaoyxz.yxzmq.broker.client.ServerClient;
 import com.liutaoyxz.yxzmq.broker.client.ServerClientManager;
 import com.liutaoyxz.yxzmq.broker.storage.MessageContainer;
+import com.liutaoyxz.yxzmq.broker.storage.NettyMessageContainer;
 import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
@@ -115,7 +116,7 @@ public class NettyMessageHandler {
                 QueueMessage qm = new QueueMessage();
                 qm.setDesc(desc);
                 qm.setText(msg);
-                result = MessageContainer.save(title, qm);
+                NettyMessageContainer.saveQueueMessage(title, qm);
                 log.debug("save queue message msg,result is {}",result);
                 break;
             default:

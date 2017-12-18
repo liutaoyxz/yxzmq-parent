@@ -155,8 +155,10 @@ public class BrokerConnection {
         ChannelFuture future = channel.writeAndFlush(buf);
         if (sync) {
             future.sync();
+            return future.isSuccess();
         }
         return true;
+
     }
 
     public List<ProtocolBean> read(byte[] bytes){

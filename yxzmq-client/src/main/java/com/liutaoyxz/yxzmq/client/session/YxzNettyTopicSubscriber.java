@@ -1,5 +1,7 @@
 package com.liutaoyxz.yxzmq.client.session;
 
+import com.liutaoyxz.yxzmq.client.YxzClientContext;
+
 import javax.jms.JMSException;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
@@ -14,12 +16,13 @@ public class YxzNettyTopicSubscriber extends AbstractMessageConsumer implements 
 
     private Topic topic;
 
+    private YxzClientContext ctx;
+
     private MessageListener messageListener;
 
-
-    public YxzNettyTopicSubscriber(Topic topic, MessageListener messageListener) {
+    public YxzNettyTopicSubscriber(Topic topic, YxzClientContext ctx) {
         this.topic = topic;
-        this.messageListener = messageListener;
+        this.ctx = ctx;
     }
 
     @Override

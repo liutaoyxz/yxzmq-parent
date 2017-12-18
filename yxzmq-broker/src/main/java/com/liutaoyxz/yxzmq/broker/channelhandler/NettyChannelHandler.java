@@ -107,7 +107,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("netty error",cause);
+        log.debug("netty error",cause);
     }
 
 

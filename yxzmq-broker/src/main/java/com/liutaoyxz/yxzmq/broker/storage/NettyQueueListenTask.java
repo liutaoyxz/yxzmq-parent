@@ -26,13 +26,13 @@ public class NettyQueueListenTask implements Runnable {
 
     private BlockingDeque<QueueMessage> messages;
 
-    private BlockingQueue<ServerClient> clients;
+    private BlockingDeque<ServerClient> clients;
 
     private AtomicBoolean cancel;
 
     public static final Logger log = LoggerFactory.getLogger(NettyQueueListenTask.class);
 
-    public NettyQueueListenTask(BlockingDeque<QueueMessage> messages, BlockingQueue<ServerClient> clients, AtomicBoolean cancel) {
+    public NettyQueueListenTask(BlockingDeque<QueueMessage> messages, BlockingDeque<ServerClient> clients, AtomicBoolean cancel) {
         this.messages = messages;
         this.clients = clients;
         this.cancel = cancel;
@@ -42,29 +42,29 @@ public class NettyQueueListenTask implements Runnable {
     public void run() {
         while (!cancel.get()) {
             try {
-                ServerClient group = clients.take();
-                clients.add(group);
-                grouploop:
-                for (ServerClient client : clients) {
-                    QueueMessage message = messages.take();
-                    if (!client.available()) {
-                        clients.remove(client);
+                ServerClient client = clients.take();
+                QueueMessage message = messages.take();
+                if (!client.available()) {
+                    //client 不可用,不管他了
+                    messages.addLast(message);
+                    continue;
+                } else {
+                    String text = message.getText();
+                    String queueName = message.getDesc().getTitle();
+                    ProtocolBean bean = new ProtocolBean();
+                    bean.setCommand(CommonConstant.Command.SEND);
+                    bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
+                    MessageDesc desc = new MessageDesc();
+                    desc.setType(CommonConstant.MessageType.QUEUE);
+                    desc.setTitle(queueName);
+                    Metadata metadata = new Metadata();
+                    List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
+                    if (!client.write(bytes, true)){
+                        //发送失败了
                         messages.addLast(message);
-                        continue grouploop;
-                    } else {
-                        String text = message.getText();
-                        String queueName = message.getDesc().getTitle();
-                        ProtocolBean bean = new ProtocolBean();
-                        bean.setCommand(CommonConstant.Command.SEND);
-                        bean.setDataBytes(text.getBytes(Charset.forName(ReadContainer.DEFAULT_CHARSET)));
-                        MessageDesc desc = new MessageDesc();
-                        desc.setType(CommonConstant.MessageType.QUEUE);
-                        desc.setTitle(queueName);
-                        Metadata metadata = new Metadata();
-                        List<byte[]> bytes = BeanUtil.convertBeanToByte(metadata, desc, bean);
-                        client.write(bytes, false);
-                        clients.add(client);
+                        continue;
                     }
+                    clients.add(client);
                 }
             } catch (InterruptedException e) {
                 log.debug("queue task error", e);

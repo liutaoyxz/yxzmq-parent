@@ -22,7 +22,11 @@ public class YxzNettyQueueSender extends AbstractProducer implements QueueSender
 
     @Override
     public void send(Message message) throws JMSException {
-
+        checkMessage(message);
+        SessionTask task = new SessionTask(SessionTask.QUEUE_SEND);
+        task.setMessage(message);
+        task.setQueue(this.queue);
+        ctx.session().addTask(task);
     }
 
     @Override
@@ -49,4 +53,11 @@ public class YxzNettyQueueSender extends AbstractProducer implements QueueSender
     public void send(Queue queue, Message message, int i, int i1, long l) throws JMSException {
 
     }
+
+    private void checkMessage(Message msg){
+        if (msg == null) {
+            throw new NullPointerException();
+        }
+    }
+
 }

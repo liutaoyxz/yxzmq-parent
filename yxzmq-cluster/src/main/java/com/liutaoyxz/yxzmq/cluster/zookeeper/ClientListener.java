@@ -10,10 +10,18 @@ import java.util.List;
 public interface ClientListener {
 
 
-
-
+    /**
+     * 删除broker
+     * @param brokerNames
+     * @return
+     */
     List<String> delBrokers(List<String> brokerNames);
 
+    /**
+     * 增加了broker
+     * @param brokerNames
+     * @return
+     */
     List<String> addBrokers(List<String> brokerNames);
 
 }

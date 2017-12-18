@@ -9,15 +9,17 @@ import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.internal.ConcurrentSet;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.JMSException;
-import javax.jms.Session;
+import javax.jms.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -41,11 +43,6 @@ public class YxzNettyConnection extends AbstractConnection {
     private ExecutorService sessionExecutor;
 
     /**
-     * connection 自身的任务执行器
-     */
-    private ExecutorService connectionExecutor;
-
-    /**
      * 是否停止
      */
     private volatile boolean stop = false;
@@ -65,6 +62,9 @@ public class YxzNettyConnection extends AbstractConnection {
 
     private ZkClientListener listener;
 
+    /** session manager **/
+    private SessionManager sessionManager;
+
     /** zookeeper 连接字符串 **/
     private String zookeeperStr;
 
@@ -81,12 +81,15 @@ public class YxzNettyConnection extends AbstractConnection {
     private ConcurrentHashMap<String,BrokerConnection> allBrokers = new ConcurrentHashMap<>();
     /** 可用的broker,我已经注册成功的 ,zkName 和 conn 对应 **/
     private ConcurrentHashMap<String,BrokerConnection> readyBrokers = new ConcurrentHashMap<>();
+    /** 发送数据用的brokers **/
+    private BlockingDeque<BrokerConnection> applyBrokers = new LinkedBlockingDeque<>();
 
     YxzNettyConnection(String zookeeperStr,YxzNettyConnectionFactory factory){
         this.factory = factory;
         this.ctx = new YxzClientContext(factory);
         this.zookeeperStr = zookeeperStr;
         this.listener = new ZkClientListener();
+        this.sessionManager = new SessionManager();
         this.sessionExecutor = new ThreadPoolExecutor(10, Integer.MAX_VALUE, 10L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(), new ThreadFactory() {
             @Override
@@ -108,8 +111,9 @@ public class YxzNettyConnection extends AbstractConnection {
      */
     @Override
     public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
-        ctx.setConnection(this);
-        YxzNettySession session = new YxzNettySession(ctx,transacted,acknowledgeMode);
+        YxzNettySession session = new YxzNettySession(ctx.createCtx(this),transacted,acknowledgeMode);
+        this.sessionManager.addSession(session);
+        this.sessionExecutor.execute(session);
         return session;
     }
 
@@ -128,6 +132,9 @@ public class YxzNettyConnection extends AbstractConnection {
         lock.lock();
         if (started){
             throw JMSErrorEnum.CONNECTION_ALREADY_STARTED.exception();
+        }
+        if (listener.getConnection() == null){
+            listener.setConnection(this);
         }
         try {
             if (root == null){
@@ -187,7 +194,7 @@ public class YxzNettyConnection extends AbstractConnection {
 
     }
 
-    String myName(){
+    public String myName(){
         return this.myName;
     }
 
@@ -221,7 +228,21 @@ public class YxzNettyConnection extends AbstractConnection {
         }
     }
 
+    public boolean write(List<byte[]> bytes) throws InterruptedException {
+        BrokerConnection conn = applyBrokers.take();
+        boolean send = conn.send(bytes, true);
+        applyBrokers.add(conn);
+        return send;
+    }
 
+
+
+    /**
+     * 处理收到的消息
+     * @param bean
+     * @param id
+     * @throws InterruptedException
+     */
     public void handleBean(ProtocolBean bean,String id) throws InterruptedException {
         int command = bean.getCommand();
         String zkName = bean.getZkName();
@@ -232,6 +253,7 @@ public class YxzNettyConnection extends AbstractConnection {
                 //注册成功
                 conn.registerSuccess();
                 readyBrokers.put(conn.getName(),conn);
+                applyBrokers.add(conn);
                 log.info("register on broker [{}] success",conn.getName());
                 signalBroker();
                 break;
@@ -266,6 +288,229 @@ public class YxzNettyConnection extends AbstractConnection {
                 lock.unlock();
             }
         }
+    }
+
+    /**
+     * 增加一个broker
+     * @param broker
+     */
+    public void addBroker(Broker broker){
+
+    }
+
+    /**
+     * 退订
+     * @param topicName
+     * @param listener
+     */
+    public void cancelSubscribe(String topicName,YxzNettySession session){
+        this.sessionManager.cancelSubscribe(session,topicName);
+    }
+
+    /**
+     * 取消监听
+     * @param queueName
+     * @param listener
+     */
+    public void cancelListen(String queueName,YxzNettySession session){
+        this.sessionManager.cancelListen(session,queueName);
+    }
+
+    /**
+     * 订阅主题
+     * @param topicName
+     * @param listener
+     */
+    public void subscribe(String topicName,YxzNettySession session){
+        this.sessionManager.subscriber(session,topicName);
+    }
+
+    /**
+     * 监听queue
+     * @param queueName
+     * @param listener
+     */
+    public void listen(String queueName,YxzNettySession session){
+        this.sessionManager.listen(session,queueName);
+    }
+
+    public void cleanAndRemoveSession(YxzNettySession session){
+        this.sessionManager.delSession(session);
+    }
+
+    /**
+     * 管理session 和connection 的关系
+     * 每次订阅的主题或者监听的队列client端都需要知道具体是哪一个session
+     * 当接收到相关的消息时,通过 SessionManager 查找通知哪一个session
+     *
+     */
+    private class SessionManager{
+
+        /**
+         * queue-session 对应的关系
+         */
+        private ConcurrentHashMap<String,BlockingDeque<YxzNettySession>> queueSession = new ConcurrentHashMap<>();
+
+        /**
+         * 主题,对应的session
+         */
+        private ConcurrentHashMap<String,Set<YxzNettySession>> topicSession = new ConcurrentHashMap<>();
+
+        /**
+         * session-queue 关系
+         */
+        private ConcurrentHashMap<YxzNettySession,Set<String>> sessionQueue = new ConcurrentHashMap<>();
+
+        /**
+         * session-topic 关系
+         */
+        private ConcurrentHashMap<YxzNettySession,Set<String>> sessionTopic = new ConcurrentHashMap<>();
+
+        /**
+         * 所有的session
+         */
+        private ConcurrentSet<YxzNettySession> sessions = new ConcurrentSet<>();
+
+        public void addSession(YxzNettySession session){
+            sessions.add(session);
+        }
+
+        /** 锁 **/
+        private ReentrantLock lock = new ReentrantLock();
+
+        /**
+         * session 订阅主题
+         * @param session
+         * @param topic
+         * @throws JMSException
+         */
+        public synchronized void subscriber(YxzNettySession session,String topicName){
+            if (session == null || StringUtils.isBlank(topicName)){
+                throw new NullPointerException();
+            }
+            Set<String> topics = sessionTopic.get(session);
+            if (topics == null){
+                topics = new ConcurrentSet<>();
+                sessionTopic.put(session,topics);
+            }
+            topics.add(topicName);
+            Set<YxzNettySession> ss = topicSession.get(topicName);
+            if (ss == null){
+                ss = new ConcurrentSet<>();
+                topicSession.put(topicName,ss);
+            }
+            if (ss.isEmpty()){
+                /**
+                 * 通知 zookeeper,如果之前这个连接没有任何session订阅,就通知zookeeper
+                 */
+                YxzNettyConnection.this.root.subscribe(topicName);
+            }
+            ss.add(session);
+        }
+
+        /**
+         * 监听queue
+         * @param session
+         * @param queue
+         * @throws JMSException
+         */
+        public synchronized void listen(YxzNettySession session,String queueName){
+            if (session == null || StringUtils.isBlank(queueName)){
+                throw new NullPointerException();
+            }
+            Set<String> queues = sessionQueue.get(session);
+            if (queues == null){
+                queues = new ConcurrentSet<>();
+                sessionQueue.put(session,queues);
+            }
+            queues.add(queueName);
+            BlockingDeque<YxzNettySession> ss = queueSession.get(queueName);
+            if (ss == null){
+                ss = new LinkedBlockingDeque<>();
+                queueSession.put(queueName,ss);
+            }
+            if (ss.isEmpty()){
+                /**
+                 * 通知 zookeeper,如果之前这个连接没有任何session监听,就通知zookeeper
+                 */
+                YxzNettyConnection.this.root.listen(queueName);
+            }
+            ss.add(session);
+        }
+
+        /**
+         * 取消监听
+         * @param session
+         * @param queueName
+         */
+        public synchronized void cancelListen(YxzNettySession session,String queueName){
+            if (session == null || StringUtils.isBlank(queueName)){
+                throw new NullPointerException();
+            }
+            Set<String> queues = sessionQueue.get(session);
+            if (queues != null){
+                queues.remove(queueName);
+            }
+            BlockingDeque<YxzNettySession> ss = queueSession.get(queueName);
+            if (ss != null){
+                ss.remove(session);
+            }
+            if (ss == null || ss.isEmpty()){
+                //通知 zookeeper
+                YxzNettyConnection.this.root.cancelListen(queueName);
+            }
+        }
+
+        /**
+         * 取消订阅
+         * @param session
+         * @param topicName
+         */
+        public synchronized void cancelSubscribe(YxzNettySession session,String topicName){
+            if (session == null || StringUtils.isBlank(topicName)){
+                throw new NullPointerException();
+            }
+            Set<String> topics = sessionTopic.get(session);
+            if (topics != null){
+                topics.remove(topicName);
+            }
+            Set<YxzNettySession> ss = topicSession.get(topicName);
+            if (ss != null){
+                ss.remove(topicName);
+            }
+            if(ss == null || ss.isEmpty()){
+                //通知 zookeeper
+                YxzNettyConnection.this.root.cancelSubscribe(topicName);
+            }
+        }
+
+        /**
+         * 删除session
+         * @param session
+         */
+        public synchronized void delSession(YxzNettySession session){
+            sessions.remove(session);
+            Set<String> queueNames = sessionQueue.get(session);
+            if (queueNames != null){
+                for (String name : queueNames){
+                    if (StringUtils.isNotBlank(name)){
+                        this.cancelListen(session,name);
+                    }
+                }
+                sessionQueue.remove(session);
+            }
+            Set<String> topicNames = sessionTopic.get(session);
+            if (topicNames != null){
+                for (String name : topicNames){
+                    if (StringUtils.isNotBlank(name)){
+                        this.cancelSubscribe(session,name);
+                    }
+                }
+                sessionTopic.remove(session);
+            }
+        }
+
+
     }
 
 }

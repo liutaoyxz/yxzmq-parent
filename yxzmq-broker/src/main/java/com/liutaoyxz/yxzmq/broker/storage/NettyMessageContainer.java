@@ -32,11 +32,6 @@ public class NettyMessageContainer {
     private static final ConcurrentHashMap<String,List<ServerClient>> TOPIC_SUBSCRIBERS = new ConcurrentHashMap<>();
 
     /**
-     * queueName 和group 对应的映射
-     */
-    private static final ConcurrentHashMap<String, BlockingQueue<ServerClient>> QNAME_SERVERCLIENT = new ConcurrentHashMap<>();
-
-    /**
      * 队列是否取消
      */
     public static final ConcurrentHashMap<String, AtomicBoolean> QNAME_CANCEL = new ConcurrentHashMap<>();
@@ -90,7 +85,9 @@ public class NettyMessageContainer {
         }
         checkQueue(queueName);
         log.info("set queue listeners,queue name is [{}] , listeners is {}",queueName,listeners);
-        QUEUE_LISTENERS.put(queueName,listeners);
+        BlockingQueue<ServerClient> ls = QUEUE_LISTENERS.get(queueName);
+        ls.clear();
+        ls.addAll(listeners);
     }
 
     private static void checkQueue(String queueName) {
@@ -100,17 +97,28 @@ public class NettyMessageContainer {
             if (messages == null) {
                 messages = new LinkedBlockingDeque<>();
                 PP_HOUSE.put(queueName, messages);
-                BlockingQueue<ServerClient> client = new LinkedBlockingQueue<>();
-                QNAME_SERVERCLIENT.put(queueName, client);
+                BlockingDeque<ServerClient> clients = new LinkedBlockingDeque<>();
+                QUEUE_LISTENERS.put(queueName, clients);
                 AtomicBoolean cancel = new AtomicBoolean(false);
                 QNAME_CANCEL.put(queueName, cancel);
-                NettyQueueListenTask task = new NettyQueueListenTask(messages, client, cancel);
+                NettyQueueListenTask task = new NettyQueueListenTask(messages, clients, cancel);
                 QUEUE_EXECUTOR.execute(task);
             }
         } finally {
             queueLock.unlock();
         }
 
+    }
+
+    public static void saveQueueMessage(String queueName,QueueMessage message){
+        checkQueue(queueName);
+        BlockingDeque<QueueMessage> queue = PP_HOUSE.get(queueName);
+        try {
+            queue.put(message);
+        } catch (InterruptedException e) {
+            log.error("save message error", e);
+        }
+        log.debug("receive message {}", message);
     }
 
 }

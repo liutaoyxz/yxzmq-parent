@@ -11,6 +11,20 @@ import java.util.List;
  */
 public class ZkClientListener implements ClientListener {
 
+    private YxzNettyConnection connection;
+
+    public ZkClientListener(){
+
+    }
+
+    public YxzNettyConnection getConnection() {
+        return connection;
+    }
+
+    public void setConnection(YxzNettyConnection connection) {
+        this.connection = connection;
+    }
+
     @Override
     public List<String> delBrokers(List<String> brokerNames) {
         return null;

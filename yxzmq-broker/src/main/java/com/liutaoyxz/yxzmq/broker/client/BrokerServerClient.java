@@ -92,8 +92,11 @@ public class BrokerServerClient implements ServerClient {
         if (sync) {
             future.sync();
         }
+        if(future.isSuccess()){
+            return true;
+        }
         log.debug("future {}", future);
-        return true;
+        return false;
     }
 
     @Override

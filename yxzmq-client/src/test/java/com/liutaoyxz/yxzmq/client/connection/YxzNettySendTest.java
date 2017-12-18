@@ -5,14 +5,12 @@ import org.junit.Test;
 import javax.jms.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Doug Tao
  * @Date: 17:19 2017/12/14
  * @Description:
  */
-public class YxzNettyConnectionTest {
+public class YxzNettySendTest {
     @Test
     public void start() throws Exception {
         YxzNettyConnectionFactory factory = new YxzNettyConnectionFactory("127.0.0.1:2181");
@@ -21,34 +19,28 @@ public class YxzNettyConnectionTest {
     }
 
     @Test
-    public void atomicTest() {
+    public void atomicTest(){
         AtomicBoolean b = new AtomicBoolean(false);
-        while (!b.compareAndSet(true, true)) {
+        while (!b.compareAndSet(true,true)){
 
         }
 
     }
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception{
         YxzNettyConnectionFactory factory = new YxzNettyConnectionFactory("127.0.0.1:2181");
         Connection conn = factory.createConnection();
         conn.start();
         Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue("queue1");
-        MessageConsumer consumer = session.createConsumer(queue);
-        consumer.setMessageListener(new MessageListener() {
-            @Override
-            public void onMessage(Message message) {
-                TextMessage msg = (TextMessage) message;
-                try {
-                    System.out.println(msg.getText());
-                } catch (JMSException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-//        session.close();
+        MessageProducer producer = session.createProducer(queue);
+        int i = 1;
+        for (;;){
+            Thread.sleep(500);
+            TextMessage message = session.createTextMessage("message-" + (i++));
+            producer.send(message);
+        }
 
     }
 

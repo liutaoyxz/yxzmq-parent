@@ -31,7 +31,30 @@ public class YxzClientContext {
 
     public YxzClientContext createCtx(YxzNettyConnection conn){
         YxzClientContext newCtx = new YxzClientContext(this.factory);
-        newCtx.setConnection(conn);
+        newCtx.connection = conn;
+        return newCtx;
+    }
+
+    public YxzClientContext createCtx(YxzNettySession session){
+        YxzClientContext newCtx = new YxzClientContext(this.factory);
+        newCtx.connection = this.connection;
+        newCtx.session = session;
+        return newCtx;
+    }
+
+    public YxzClientContext createCtx(Queue queue){
+        YxzClientContext newCtx = new YxzClientContext(this.factory);
+        newCtx.connection = this.connection;
+        newCtx.session = this.session;
+        newCtx.queue = queue;
+        return newCtx;
+    }
+
+    public YxzClientContext createCtx(Topic topic){
+        YxzClientContext newCtx = new YxzClientContext(this.factory);
+        newCtx.connection = this.connection;
+        newCtx.session = this.session;
+        newCtx.topic = topic;
         return newCtx;
     }
 
@@ -39,16 +62,8 @@ public class YxzClientContext {
         return queue;
     }
 
-    public void setQueue(Queue queue) {
-        this.queue = queue;
-    }
-
     public Topic topic() {
         return topic;
-    }
-
-    public void setTopic(Topic topic) {
-        this.topic = topic;
     }
 
     public YxzNettyConnection connection() {
@@ -63,11 +78,5 @@ public class YxzClientContext {
         return session;
     }
 
-    public void setConnection(YxzNettyConnection connection) {
-        this.connection = connection;
-    }
 
-    public void setSession(YxzNettySession session) {
-        this.session = session;
-    }
 }

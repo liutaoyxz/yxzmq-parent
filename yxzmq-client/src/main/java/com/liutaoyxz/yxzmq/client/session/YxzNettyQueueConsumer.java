@@ -40,7 +40,7 @@ public class YxzNettyQueueConsumer implements QueueReceiver {
 
     @Override
     public void setMessageListener(MessageListener messageListener) throws JMSException {
-
+        ctx.session().queueListenerChange(queue.getQueueName(),this.messageListener,messageListener);
     }
 
     @Override

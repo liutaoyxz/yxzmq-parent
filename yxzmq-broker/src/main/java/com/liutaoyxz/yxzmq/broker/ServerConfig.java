@@ -1,5 +1,9 @@
 package com.liutaoyxz.yxzmq.broker;
 
+/**
+ * 服务端配置
+ * @author DougTao
+ */
 public class ServerConfig {
 
     private int port = 11171;

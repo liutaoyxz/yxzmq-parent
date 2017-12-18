@@ -3,6 +3,8 @@ package com.liutaoyxz.yxzmq.client.session;
 import com.liutaoyxz.yxzmq.client.YxzClientContext;
 
 import javax.jms.Message;
+import javax.jms.Queue;
+import javax.jms.Topic;
 
 /**
  * @author Doug Tao
@@ -35,7 +37,11 @@ public class SessionTask {
     /** 消息 **/
     private Message message;
 
-    public SessionTask(int type, YxzClientContext ctx) {
+    private Topic topic;
+
+    private Queue queue;
+
+    public SessionTask(int type) {
         this.type = type;
         this.ctx = ctx;
     }
@@ -50,5 +56,21 @@ public class SessionTask {
 
     public int getType() {
         return type;
+    }
+
+    public Topic getTopic() {
+        return topic;
+    }
+
+    public void setTopic(Topic topic) {
+        this.topic = topic;
+    }
+
+    public Queue getQueue() {
+        return queue;
+    }
+
+    public void setQueue(Queue queue) {
+        this.queue = queue;
     }
 }

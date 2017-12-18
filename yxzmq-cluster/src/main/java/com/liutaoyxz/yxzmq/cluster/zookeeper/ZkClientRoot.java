@@ -354,4 +354,217 @@ public class ZkClientRoot {
         return listener;
     }
 
+    public void subscribe(String topicName){
+        if (StringUtils.isBlank(topicName)){
+            throw new NullPointerException();
+        }
+        String path = ZkConstant.Path.TOPICS + "/" + topicName;
+        ZooKeeper zk = ZkServer.getZookeeper();
+        try {
+            Stat state = zk.exists(path, false);
+            if (state == null){
+                //创建topic节点
+                createNode(path);
+            }
+            //创建订阅节点
+            String clientPath = path + "/" + myName;
+            createEphemeralNode(clientPath);
+        } catch (KeeperException e) {
+            KeeperException.Code code = e.code();
+            switch (code){
+                case SESSIONEXPIRED:
+                    //过期
+                    restart(ZkServer.getZkVersion());
+                    subscribe(topicName);
+                    break;
+
+                default:
+                    log.warn("subscribe error,code is {}",code);
+                    break;
+            }
+        } catch (InterruptedException e) {
+            log.error("subscribe error",e);
+        }
+    }
+
+    /**
+     * 取消订阅
+     * @param topicName
+     */
+    public void cancelSubscribe(String topicName){
+        if (StringUtils.isBlank(topicName)){
+            throw new NullPointerException();
+        }
+        String path = ZkConstant.Path.TOPICS + "/" + topicName + "/" + myName;
+        ZooKeeper zk = ZkServer.getZookeeper();
+        try {
+            Stat state = zk.exists(path, false);
+            if (state == null){
+                //没有这个节点,正好
+                log.warn("client [{}] cancelSubscribe [{}] but is not subscribing",myName,topicName);
+                return;
+            }
+            //创建订阅节点
+            delNode(path);
+        } catch (KeeperException e) {
+            KeeperException.Code code = e.code();
+            switch (code){
+                case SESSIONEXPIRED:
+                    //过期
+                    restart(ZkServer.getZkVersion());
+                    cancelSubscribe(topicName);
+                    break;
+                default:
+                    log.warn("subscribe error,code is {}",code);
+                    break;
+            }
+        } catch (InterruptedException e) {
+            log.error("subscribe error",e);
+        }
+    }
+
+
+    /**
+     * 监听
+     * @param queueName
+     */
+    public void listen(String queueName){
+        if (StringUtils.isBlank(queueName)){
+            throw new NullPointerException();
+        }
+        String path = ZkConstant.Path.QUEUES + "/" + queueName;
+        ZooKeeper zk = ZkServer.getZookeeper();
+        try {
+            Stat state = zk.exists(path, false);
+            if (state == null){
+                //创建topic节点
+                createNode(path);
+            }
+            //创建订阅节点
+            String clientPath = path + "/" + myName;
+            createEphemeralNode(clientPath);
+        } catch (KeeperException e) {
+            KeeperException.Code code = e.code();
+            switch (code){
+                case SESSIONEXPIRED:
+                    //过期
+                    restart(ZkServer.getZkVersion());
+                    listen(queueName);
+                    break;
+
+                default:
+                    log.warn("listen error,code is {}",code);
+                    break;
+            }
+        } catch (InterruptedException e) {
+            log.error("listen error",e);
+        }
+    }
+
+    /**
+     * 取消监听
+     * @param topicName
+     */
+    public void cancelListen(String queueName){
+        if (StringUtils.isBlank(queueName)){
+            throw new NullPointerException();
+        }
+        String path = ZkConstant.Path.QUEUES + "/" + queueName + "/" + myName;
+        ZooKeeper zk = ZkServer.getZookeeper();
+        try {
+            Stat state = zk.exists(path, false);
+            if (state == null){
+                //没有这个节点,正好
+                log.warn("client [{}] cancelListen [{}] but is not listen",myName,queueName);
+                return;
+            }
+            //创建订阅节点
+            delNode(path);
+        } catch (KeeperException e) {
+            KeeperException.Code code = e.code();
+            switch (code){
+                case SESSIONEXPIRED:
+                    //过期
+                    restart(ZkServer.getZkVersion());
+                    cancelListen(queueName);
+                    break;
+                default:
+                    log.warn("cancelListen error,code is {}",code);
+                    break;
+            }
+        } catch (InterruptedException e) {
+            log.error("cancelListen error",e);
+        }
+    }
+
+
+
+    /**
+     * 创建一个临时节点
+     * @param path
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
+    private void createEphemeralNode(String path) throws InterruptedException, KeeperException {
+        ZooKeeper zk = ZkServer.getZookeeper();
+        try {
+            zk.create(path,null,ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.EPHEMERAL);
+        } catch (KeeperException e) {
+            KeeperException.Code code = e.code();
+            switch (code){
+                case NODEEXISTS:
+                    //节点已经存在了
+                    log.info("create node [{}] ,but node is exist",path);
+                    break;
+                default:
+                    log.warn("createEphemeralNode error,code is {}",code);
+                    throw e;
+            }
+        }
+    }
+
+    /**
+     * 创建一个永久节点
+     * @param path
+     * @throws InterruptedException
+     */
+    private void createNode(String path) throws InterruptedException, KeeperException {
+        ZooKeeper zk = ZkServer.getZookeeper();
+        try {
+            zk.create(path,null,ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.PERSISTENT);
+        } catch (KeeperException e) {
+            KeeperException.Code code = e.code();
+            switch (code){
+                case NODEEXISTS:
+                    //节点已经存在了
+                    log.info("create node [{}] ,but node is exist",path);
+                    break;
+                default:
+                    log.warn("createEphemeralNode error,code is {}",code);
+                    throw e;
+            }
+        }
+    }
+
+    private void delNode(String path) throws KeeperException {
+        ZooKeeper zk = ZkServer.getZookeeper();
+        try {
+            zk.delete(path,0);
+        } catch (InterruptedException e) {
+            log.error("delNode error",e);
+        } catch (KeeperException e) {
+            KeeperException.Code code = e.code();
+            switch (code){
+                case NONODE:
+                    //没有这个节点
+                    log.warn("delete node [{}] ,but node is not exist",path);
+                    break;
+                default:
+                    log.warn("createEphemeralNode error,code is {}",code);
+                    throw e;
+            }
+        }
+
+    }
+
 }
