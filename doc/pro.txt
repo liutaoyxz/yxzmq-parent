@@ -12,3 +12,5 @@
 12  实现了topic 和queue两种模式,开始优化, 先完成容错设计,然后完成集群. 其他的规范完成集群后继续
 13  实现cluster中,整体设计基本定型,完成cluster的功能后在关键点增加listener,broker和client实现listener
 14  实现数据持久化中,采用内嵌式的derby,每次启动都会删除指定目录,然后重新create
+15  已经采用了zookeeper的方式,可以实现broker和client端的动态扩展,但是目前发送消息没有确认机制,出现单点时很大的几率会丢失消息
+16  先实现确认机制,然后实现事务消息 事务消息已session的事务操作为基准
