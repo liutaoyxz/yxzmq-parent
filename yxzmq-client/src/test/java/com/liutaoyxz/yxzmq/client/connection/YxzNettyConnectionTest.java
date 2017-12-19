@@ -33,7 +33,7 @@ public class YxzNettyConnectionTest {
         Connection conn = factory.createConnection();
         conn.start();
         Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue("queue1");
+        Queue queue = session.createQueue("queue4");
         MessageConsumer consumer = session.createConsumer(queue);
         consumer.setMessageListener(new MessageListener() {
             @Override

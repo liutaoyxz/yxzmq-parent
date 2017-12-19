@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.client;
 
 import com.liutaoyxz.yxzmq.broker.messagehandler.NettyMessageHandler;
+import com.liutaoyxz.yxzmq.cluster.broker.Broker;
 import com.liutaoyxz.yxzmq.common.enums.ConnectStatus;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
@@ -165,6 +166,29 @@ public class BrokerServerClient implements ServerClient {
     @Override
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        BrokerServerClient broker = (BrokerServerClient) o;
+
+        if (name != null ? !name.equals(broker.name) : broker.name != null) {
+            return false;
+        }
+
+        return true;
     }
 
     class ReadTask implements Runnable{

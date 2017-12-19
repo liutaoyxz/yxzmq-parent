@@ -33,7 +33,7 @@ public class YxzNettySendTest {
         Connection conn = factory.createConnection();
         conn.start();
         Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue("queue1");
+        Queue queue = session.createQueue("queue4");
         MessageProducer producer = session.createProducer(queue);
         int i = 1;
         for (;;){

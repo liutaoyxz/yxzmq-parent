@@ -7,7 +7,10 @@ import org.apache.zookeeper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * @author Doug Tao
@@ -17,6 +20,8 @@ import java.util.List;
 public class QueueChildrenCallback implements AsyncCallback.ChildrenCallback, Watcher {
 
     public static final Logger log = LoggerFactory.getLogger(QueueChildrenCallback.class);
+
+    private static final Set WATCHING = new CopyOnWriteArraySet();
 
     private String queueName;
 
@@ -37,7 +42,10 @@ public class QueueChildrenCallback implements AsyncCallback.ChildrenCallback, Wa
         switch (code) {
             case OK:
                 log.info("queue [{}] listen change,code is {},listeners is {}", this.queueName,code,children);
-                QueueCallback.addListeners(queueName,children);
+                if (children == null){
+                    children = new ArrayList<>();
+                }
+                ZkBrokerRoot.getListener().queueListenersChange(queueName,children);
                 break;
             default:
                 log.warn("queue [{}] listen change,code is {},listeners is {}", this.queueName,code,children);
@@ -53,7 +61,10 @@ public class QueueChildrenCallback implements AsyncCallback.ChildrenCallback, Wa
      * 监视某一主题
      * @param queueName
      */
-    public static void watchQueue(String queueName) {
+    public synchronized static void watchQueue(String queueName) {
+        if (WATCHING.contains(queueName)){
+            return;
+        }
         QueueChildrenCallback callback = new QueueChildrenCallback(queueName);
         ZooKeeper zk = ZkServer.getZookeeper();
         String path = ZkConstant.Path.QUEUES + "/" + queueName;

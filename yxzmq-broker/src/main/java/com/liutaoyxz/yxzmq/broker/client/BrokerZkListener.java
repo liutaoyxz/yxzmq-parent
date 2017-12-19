@@ -40,10 +40,15 @@ public class BrokerZkListener implements BrokerListener {
         NettyMessageContainer.setTopicSubscribers(topicName,clients);
     }
 
+    /**
+     * 队列的监听发生变化,如果客户端先监听的队列,broker端 是后来动态连接上来的,此时broker可能会差找不到listener对象
+     *
+     * @param queueName
+     * @param listeners
+     */
     @Override
     public void queueListenersChange(String queueName, List<String> listeners) {
-        List<ServerClient> clients = ServerClientManager.getServerClients(listeners);
-        NettyMessageContainer.setQueueListeners(queueName,new LinkedBlockingQueue<>(clients));
+        NettyMessageContainer.setQueueListeners(queueName,listeners);
     }
 
     @Override

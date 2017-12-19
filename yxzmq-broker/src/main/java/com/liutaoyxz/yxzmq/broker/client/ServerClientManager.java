@@ -1,6 +1,7 @@
 package com.liutaoyxz.yxzmq.broker.client;
 
 import com.liutaoyxz.yxzmq.broker.server.NettyServer;
+import com.liutaoyxz.yxzmq.broker.storage.NettyMessageContainer;
 import com.liutaoyxz.yxzmq.common.Address;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
@@ -141,6 +142,13 @@ public class ServerClientManager {
         return result;
     }
 
+    public static ServerClient getServerClientByName(String name){
+        if (StringUtils.isBlank(name)){
+            throw new NullPointerException();
+        }
+        return NAME_CLIENT.get(name);
+    }
+
     public static boolean checkServerClient(ServerClient client){
         if (client != null){
             if (!client.available()){
@@ -177,6 +185,7 @@ public class ServerClientManager {
             client.write(bytes, false);
             client.ready();
             NAME_CLIENT.put(zkName, client);
+            NettyMessageContainer.clientReady(zkName);
         } catch (InterruptedException e) {
             log.error("client register error", e);
             //发送消息失败,什么也不做

@@ -1,12 +1,16 @@
 package com.liutaoyxz.yxzmq.broker.storage;
 
 import com.liutaoyxz.yxzmq.broker.client.ServerClient;
+import com.liutaoyxz.yxzmq.broker.client.ServerClientManager;
 import com.liutaoyxz.yxzmq.io.wrap.QueueMessage;
+import io.netty.util.internal.ConcurrentSet;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -30,6 +34,11 @@ public class NettyMessageContainer {
      * 固定不变的 queue 和 listeners 的映射
      */
     private static final ConcurrentHashMap<String, BlockingQueue<ServerClient>> FIXED_QUEUE_LISTENERS = new ConcurrentHashMap<>();
+
+    /**
+     * 准备连接的 queue listener
+     */
+    private static final ConcurrentHashMap<String,Set<String>> PREPARE_QUEUE = new ConcurrentHashMap<>();
 
     /**
      * topic 订阅者
@@ -86,19 +95,67 @@ public class NettyMessageContainer {
      * @param queueName
      * @param listeners
      */
-    public static void setQueueListeners(String queueName, BlockingQueue<ServerClient> listeners) {
+    public synchronized static void setQueueListeners(String queueName, List<String> listeners) {
         if (StringUtils.isBlank(queueName)) {
             return;
         }
         checkQueue(queueName);
         log.info("set queue listeners,queue name is [{}] , listeners is {}", queueName, listeners);
+        List<ServerClient> clients = new ArrayList<>();
+        for (String name : listeners) {
+            if (StringUtils.isNotBlank(name)){
+                ServerClient sc = ServerClientManager.getServerClientByName(name);
+                if (sc == null){
+                    //这个连接可能还没有连接过来
+                    Set<String> queueNames = PREPARE_QUEUE.get(name);
+                    if (queueNames == null){
+                        queueNames = new ConcurrentSet<>();
+                    }
+                    queueNames.add(queueName);
+                    PREPARE_QUEUE.put(name,queueNames);
+                    log.info("client [{}] for queue [{}] is not ready",name,queueName);
+                }else {
+                    //这个连接可用
+                    clients.add(sc);
+                }
+            }
+        }
         BlockingQueue<ServerClient> ls = QUEUE_LISTENERS.get(queueName);
         BlockingQueue<ServerClient> fls = FIXED_QUEUE_LISTENERS.get(queueName);
         ls.clear();
         fls.clear();
-        ls.addAll(listeners);
-        fls.addAll(listeners);
+        ls.addAll(clients);
+        fls.addAll(clients);
     }
+
+    /**
+     * client 准备好了,把准备列表里的都拿出来
+     * @param name
+     */
+    public static void clientReady(String name){
+        if (StringUtils.isBlank(name)){
+            return;
+        }
+        ServerClient client = ServerClientManager.getServerClientByName(name);
+        if (client == null){
+            return;
+        }
+        Set<String> queues = PREPARE_QUEUE.get(name);
+        if (queues != null && !queues.isEmpty()){
+            for (String qName : queues){
+                if (StringUtils.isNotBlank(qName)){
+                    checkQueue(qName);
+                    BlockingQueue<ServerClient> scs = QUEUE_LISTENERS.get(qName);
+                    BlockingQueue<ServerClient> fscs = FIXED_QUEUE_LISTENERS.get(qName);
+                    scs.add(client);
+                    fscs.add(client);
+                    queues.remove(qName);
+                    log.info("client [{}] for queue [{}] ready",name,qName);
+                }
+            }
+        }
+    }
+
 
     private static void checkQueue(String queueName) {
         queueLock.lock();
@@ -109,7 +166,8 @@ public class NettyMessageContainer {
                 PP_HOUSE.put(queueName, messages);
                 BlockingDeque<ServerClient> clients = new LinkedBlockingDeque<>();
                 QUEUE_LISTENERS.put(queueName, clients);
-                FIXED_QUEUE_LISTENERS.put(queueName, clients);
+                BlockingDeque<ServerClient> fixedClients = new LinkedBlockingDeque<>();
+                FIXED_QUEUE_LISTENERS.put(queueName, fixedClients);
                 AtomicBoolean cancel = new AtomicBoolean(false);
                 QNAME_CANCEL.put(queueName, cancel);
                 NettyQueueListenTask task = new NettyQueueListenTask(messages, clients, cancel);

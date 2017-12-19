@@ -24,9 +24,9 @@ public class QueueCallback implements AsyncCallback.ChildrenCallback {
     public static final Logger log = LoggerFactory.getLogger(QueueCallback.class);
 
     /**
-     * 主题 和订阅者的映射
+     * 队列 和订阅者的映射
      */
-    private static final ConcurrentHashMap<String,CopyOnWriteArrayList<String>> QUEUE_SUBSCRIBERS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,CopyOnWriteArrayList<String>> QUEUE_SENDERS = new ConcurrentHashMap<>();
 
     private QueueWatcher watcher;
 
@@ -49,14 +49,14 @@ public class QueueCallback implements AsyncCallback.ChildrenCallback {
         ZooKeeper zk = ZkServer.getZookeeper();
         switch (code){
             case OK:
-                // 查询children成功
-                if (children != null){
-                    this.checkQueuesChildren(children);
-                }
-
                 log.info("get queues children OK,path is {},continue watch", path);
                 zk.exists(ZkConstant.Path.QUEUES, watcher, null, null);
-
+                //对比本地缓存的queues,通知broker
+                if (children != null && !children.isEmpty()){
+                    for (String queueName : children){
+                        QueueChildrenCallback.watchQueue(queueName);
+                    }
+                }
                 break;
             case CONNECTIONLOSS:
                 //连接错误,继续尝试,此时path 是null
@@ -82,14 +82,14 @@ public class QueueCallback implements AsyncCallback.ChildrenCallback {
      * @return
      */
     private List<String> checkQueuesChildren(List<String> children){
-        Enumeration<String> keys = QUEUE_SUBSCRIBERS.keys();
+        Enumeration<String> keys = QUEUE_SENDERS.keys();
 
         while (keys.hasMoreElements()){
             String queue = keys.nextElement();
             if (children.contains(queue)){
                 children.remove(queue);
             }else {
-                QUEUE_SUBSCRIBERS.remove(queue);
+                QUEUE_SENDERS.remove(queue);
                 // TODO: 2017/11/30 通知 broker 删除这个主题
                 log.info("old queue deleted,queue is {}",queue);
             }
@@ -110,7 +110,8 @@ public class QueueCallback implements AsyncCallback.ChildrenCallback {
      * @param listeners
      */
     public static void addListeners(String queueName, List<String> listeners){
-        QUEUE_SUBSCRIBERS.put(queueName,new CopyOnWriteArrayList<>(listeners));
+        CopyOnWriteArrayList<String> bls = new CopyOnWriteArrayList<>(listeners);
+        QUEUE_SENDERS.put(queueName,bls);
         ZkBrokerRoot.getListener().queueListenersChange(queueName,listeners);
     }
 
