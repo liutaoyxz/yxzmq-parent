@@ -14,22 +14,7 @@ import java.util.concurrent.CountDownLatch;
 public class ZkClientRootTest {
     @Test
     public void start() throws Exception {
-        ZkClientRoot root = ZkClientRoot.createRoot(new ClientListener() {
-            @Override
-            public List<String> delBrokers(List<String> brokerNames) {
-                System.out.println("delBrokers :"+brokerNames);
-                return new ArrayList<>();
-            }
 
-            @Override
-            public List<String> addBrokers(List<String> brokerNames) {
-                System.out.println("addBrokers :" + brokerNames);
-                return new ArrayList<>();
-            }
-        },"127.0.0.1:2181");
-        root.start();
-        CountDownLatch latch = new CountDownLatch(1);
-        latch.await();
     }
 
 }

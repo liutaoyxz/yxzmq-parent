@@ -46,8 +46,8 @@ public class YxzNettyConnectionTest {
                 }
             }
         });
-        Thread.sleep(30000);
-        session.close();
+//        Thread.sleep(30000);
+//        session.close();
 
     }
 

@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
+import com.liutaoyxz.yxzmq.cluster.broker.Broker;
 import com.liutaoyxz.yxzmq.cluster.zookeeper.ClientListener;
 
 import java.util.List;
@@ -26,12 +27,12 @@ public class ZkClientListener implements ClientListener {
     }
 
     @Override
-    public List<String> delBrokers(List<String> brokerNames) {
-        return null;
+    public List<String> delBrokers(List<Broker> brokers) {
+        return connection.delBrokers(brokers);
     }
 
     @Override
-    public List<String> addBrokers(List<String> brokerNames) {
-        return null;
+    public List<String> addBrokers(List<Broker> brokers) {
+        return connection.addBrokers(brokers);
     }
 }

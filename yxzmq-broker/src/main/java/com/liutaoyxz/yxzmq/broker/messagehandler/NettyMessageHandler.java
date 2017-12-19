@@ -117,7 +117,8 @@ public class NettyMessageHandler {
                 qm.setDesc(desc);
                 qm.setText(msg);
                 NettyMessageContainer.saveQueueMessage(title, qm);
-                log.debug("save queue message msg,result is {}",result);
+                log.debug("save queue message {}",qm);
+                System.out.println(qm.getText());
                 break;
             default:
                 log.debug("handler message error,message title is {}",title);

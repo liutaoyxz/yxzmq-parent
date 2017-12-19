@@ -37,7 +37,7 @@ public class YxzNettySendTest {
         MessageProducer producer = session.createProducer(queue);
         int i = 1;
         for (;;){
-            Thread.sleep(100);
+            Thread.sleep(500);
             TextMessage message = session.createTextMessage("message-" + (i++));
             producer.send(message);
             System.out.println("send --> "+message.getText());

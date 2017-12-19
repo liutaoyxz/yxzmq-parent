@@ -263,20 +263,19 @@ public class ZkClientRoot {
      * 检查已有的brokers  通知client,断开或者新连接的broker
      */
     private synchronized void connectBrokers() {
-        List<String> addBrokers = new ArrayList<>();
-        List<String> delBrokers = new ArrayList<>();
+        List<Broker> addBrokers = new ArrayList<>();
+        List<Broker> delBrokers = new ArrayList<>();
         List<String> newBrokers = null;
         if (CONNECTED_BROKER.size() == 0) {
             //之前没有连接的broker
             if (READY_BROKER.size() > 0) {
                 for (Broker b : READY_BROKER) {
-                    addBrokers.add(b.getName());
+                    addBrokers.add(b);
                 }
                 newBrokers = listener.addBrokers(addBrokers);
-                CONNECTED_BROKER.clear();
                 log.info("new brokers is {}", newBrokers);
                 if (newBrokers != null) {
-                    CONNECTED_BROKER.addAll(getBrokersByNames(newBrokers));
+                    CONNECTED_BROKER.addAllAbsent(getBrokersByNames(newBrokers));
                 }
             }
             return;
@@ -284,12 +283,12 @@ public class ZkClientRoot {
 
         for (Broker b : READY_BROKER) {
             if (!CONNECTED_BROKER.contains(b)) {
-                addBrokers.add(b.getName());
+                addBrokers.add(b);
             }
         }
         for (Broker b : CONNECTED_BROKER) {
-            if (!addBrokers.contains(b.getName())) {
-                delBrokers.add(b.getName());
+            if (!READY_BROKER.contains(b)) {
+                delBrokers.add(b);
             }
         }
         if (!addBrokers.isEmpty()) {
@@ -302,6 +301,13 @@ public class ZkClientRoot {
         log.info("new brokers is {}", newBrokers);
         if (newBrokers != null) {
             CONNECTED_BROKER.addAll(getBrokersByNames(newBrokers));
+        }
+    }
+
+    public void addConnectBroker(String name){
+        Broker broker = ALL_BROKER.get(name);
+        if (broker != null){
+            CONNECTED_BROKER.addIfAbsent(broker);
         }
     }
 

@@ -1,5 +1,7 @@
 package com.liutaoyxz.yxzmq.cluster.zookeeper;
 
+import com.liutaoyxz.yxzmq.cluster.broker.Broker;
+
 import java.util.List;
 
 /**
@@ -12,16 +14,16 @@ public interface ClientListener {
 
     /**
      * 删除broker
-     * @param brokerNames
+     * @param brokers
      * @return
      */
-    List<String> delBrokers(List<String> brokerNames);
+    List<String> delBrokers(List<Broker> brokers);
 
     /**
      * 增加了broker
-     * @param brokerNames
+     * @param brokers
      * @return
      */
-    List<String> addBrokers(List<String> brokerNames);
+    List<String> addBrokers(List<Broker> brokers) ;
 
 }

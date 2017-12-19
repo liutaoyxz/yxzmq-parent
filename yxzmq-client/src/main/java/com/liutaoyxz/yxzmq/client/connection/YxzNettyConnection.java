@@ -308,15 +308,38 @@ public class YxzNettyConnection extends AbstractConnection {
     }
 
 
-    public void delBroker(String id) {
+    public void delBroker(String id) throws Exception {
         BrokerConnection conn = allBrokers.remove(id);
         if (conn != null) {
-            log.info("remove brokerConnection {}", conn);
+            log.info("remove brokerConnection {}", conn.getName());
+            conn.close();
             BrokerConnection rconn = readyBrokers.remove(conn.getName());
             if (conn == rconn) {
                 readyBrokerNum.decrementAndGet();
             }
         }
+    }
+
+    public List<String> delBrokers(List<Broker> brokers){
+        log.info("del brokers {}",brokers);
+        List<String> result = new ArrayList<>();
+        for (Broker b : brokers){
+            BrokerConnection conn = readyBrokers.remove(b.getName());
+            if (conn != null) {
+                result.add(conn.getName());
+                log.info("remove brokerConnection {}", conn);
+                BrokerConnection rconn = allBrokers.remove(conn.id());
+                if (conn == rconn) {
+                    readyBrokerNum.decrementAndGet();
+                }
+                try {
+                    conn.close();
+                } catch (Exception e) {
+                    log.warn("close conn {} error",conn);
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -340,6 +363,7 @@ public class YxzNettyConnection extends AbstractConnection {
                 applyBrokers.add(conn);
                 log.info("register on broker [{}] success", conn.getName());
                 signalBroker();
+                root.addConnectBroker(conn.getName());
                 break;
             case CommonConstant.Command.SEND:
                 //发送消息
@@ -439,10 +463,23 @@ public class YxzNettyConnection extends AbstractConnection {
     /**
      * 增加一个broker
      *
-     * @param broker
+     * @param brokers
      */
-    public void addBroker(Broker broker) {
-
+    public List<String> addBrokers(List<Broker> brokers) {
+        List<String> result = new ArrayList<>();
+        for (Broker b : brokers) {
+            BrokerConnection conn = new BrokerConnection(b.getName(), this);
+            //连接并且发送注册消息
+            try {
+                boolean cb = conn.connectAndRegister();
+                if (cb){
+                    result.add(b.getName());
+                }
+            } catch (InterruptedException e) {
+                log.error("connect to broker [{}] error",conn.getName());
+            }
+        }
+        return result;
     }
 
     /**
