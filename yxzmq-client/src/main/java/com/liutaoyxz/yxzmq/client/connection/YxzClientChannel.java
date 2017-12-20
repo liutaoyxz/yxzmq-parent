@@ -1,10 +1,10 @@
 package com.liutaoyxz.yxzmq.client.connection;
 
-import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.ReadContainer;
 import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
+import com.liutaoyxz.yxzmq.io.util.ProtostuffUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,11 +1,11 @@
 package com.liutaoyxz.yxzmq;
 
-import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
 import com.liutaoyxz.yxzmq.io.protocol.TextMessage;
 import com.liutaoyxz.yxzmq.io.protocol.constant.CommonConstant;
+import com.liutaoyxz.yxzmq.io.util.ProtostuffUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

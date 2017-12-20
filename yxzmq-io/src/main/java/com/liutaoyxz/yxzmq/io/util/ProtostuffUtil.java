@@ -1,4 +1,4 @@
-package com.liutaoyxz.yxzmq.common.util;
+package com.liutaoyxz.yxzmq.io.util;
 
 import com.liutaoyxz.yxzmq.common.Address;
 import io.protostuff.LinkedBuffer;
@@ -10,8 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -82,14 +80,9 @@ public class ProtostuffUtil {
                 clazz = Class.forName(className);
                 classNameToClass.putIfAbsent(className, clazz);
             }
-            obj = clazz.newInstance();
             Schema schema = RuntimeSchema.getSchema(clazz);
+            obj = schema.newMessage();
             ProtostuffIOUtil.mergeFrom(bytes, obj, schema);
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            LOGGER.error("deSerializable error ", e);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             LOGGER.error("error className : {} ", className);

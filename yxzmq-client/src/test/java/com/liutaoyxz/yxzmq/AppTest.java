@@ -1,6 +1,5 @@
 package com.liutaoyxz.yxzmq;
 
-import com.liutaoyxz.yxzmq.common.util.ProtostuffUtil;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 
 import java.util.Arrays;
