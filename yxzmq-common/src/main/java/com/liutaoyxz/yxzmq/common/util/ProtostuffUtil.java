@@ -1,5 +1,6 @@
 package com.liutaoyxz.yxzmq.common.util;
 
+import com.liutaoyxz.yxzmq.common.Address;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
 import io.protostuff.ProtostuffIOUtil;
@@ -10,11 +11,13 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
  * Created by liutao on 2017/11/6.
+ * @author DougTao
  */
 public class ProtostuffUtil {
 
@@ -46,8 +49,28 @@ public class ProtostuffUtil {
         return obj;
     }
 
+    public static void main(String[] args) {
+        Address address = Address.createAddress("192.55.66.77:11171-000001");
+        byte[] bytes = serializable(address);
+        long total = 0;
+        for (int j = 0; j < 1000; j++) {
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < 10000; i++) {
+                get(bytes,Address.class.getName());
+            }
+            long end = System.currentTimeMillis();
+            long c = (end - start);
+            total += c;
+            System.out.println(c);
+        }
+        System.out.println("total  :" + total);
+
+
+    }
+
     /**
      * 反序列化
+     * 注意: 无缓存版 比有缓存版的性能相差3倍左右
      */
     public static Object get(byte[] bytes, String className) {
 
@@ -77,13 +100,18 @@ public class ProtostuffUtil {
 
     /**
      * 序列化
-     *
+     * 注意: 我缓存版和有缓存版的性能 没有差别
      * @return
      */
     public static <T> byte[] serializable(T obj) {
         Schema schema = RuntimeSchema.getSchema(obj.getClass());
         return ProtobufIOUtil.toByteArray(obj, schema, LinkedBuffer.allocate(256));
     }
+
+
+
+
+
 
     /**
      * 获取metadata 序列化bytes 长度

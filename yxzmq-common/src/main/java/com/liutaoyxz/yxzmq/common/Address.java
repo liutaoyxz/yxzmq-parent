@@ -15,6 +15,10 @@ public class Address {
 
     private String order;
 
+    public Address(){
+
+    }
+
     private Address(String ip,int port,String order){
         this.ip = ip;
         this.port = port;

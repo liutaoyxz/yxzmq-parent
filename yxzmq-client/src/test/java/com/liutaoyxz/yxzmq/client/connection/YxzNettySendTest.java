@@ -38,7 +38,12 @@ public class YxzNettySendTest {
         int i = 1;
         for (;;){
             Thread.sleep(500);
-            TextMessage message = session.createTextMessage("message-" + (i++));
+            TextMessage message = session.createTextMessage(""+(i++)+"message-message-message-message-message-message-message-message-message" +
+                    "-message-message-message-message-message-message-message-message-message-" +
+                    "message-message-message-message-message-message-message-message-message-" +
+                    "message-message-message-message-message-message-message-message-message-" +
+                    "message-message-message-message-message-message-message-message-message-" +
+                    "message-message-message-message-message-message-message-");
             producer.send(message);
             System.out.println("send --> "+message.getText());
         }
