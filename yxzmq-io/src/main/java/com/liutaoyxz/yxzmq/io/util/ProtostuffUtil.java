@@ -47,24 +47,6 @@ public class ProtostuffUtil {
         return obj;
     }
 
-    public static void main(String[] args) {
-        Address address = Address.createAddress("192.55.66.77:11171-000001");
-        byte[] bytes = serializable(address);
-        long total = 0;
-        for (int j = 0; j < 1000; j++) {
-            long start = System.currentTimeMillis();
-            for (int i = 0; i < 10000; i++) {
-                get(bytes,Address.class.getName());
-            }
-            long end = System.currentTimeMillis();
-            long c = (end - start);
-            total += c;
-            System.out.println(c);
-        }
-        System.out.println("total  :" + total);
-
-
-    }
 
     /**
      * 反序列化
