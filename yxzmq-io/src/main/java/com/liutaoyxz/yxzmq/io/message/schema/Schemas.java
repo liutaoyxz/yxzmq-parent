@@ -15,4 +15,6 @@ public interface Schemas {
 
     Schema PRODUCER_ID_SCHEMA = new ProducerIdSchema();
 
+    Schema MESSAGE_ID = new MessageIdSchema();
+
 }
