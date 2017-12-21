@@ -40,6 +40,12 @@
             <artifactId>commons-pool2</artifactId>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/javax.jms/jms -->
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+        </dependency>
+
 
         <!-- protostuff -->
         <dependency>

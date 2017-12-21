@@ -24,11 +24,6 @@
             <artifactId>yxzmq-io</artifactId>
             <version>${parent.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/javax.jms/jms -->
-        <dependency>
-            <groupId>javax.jms</groupId>
-            <artifactId>javax.jms-api</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
