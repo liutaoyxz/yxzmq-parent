@@ -23,7 +23,7 @@ public class ConnectionIdTest {
     public static final ExecutorService EXECUTOR = new ThreadPoolExecutor(2, 2, 5L,
             TimeUnit.SECONDS, new LinkedBlockingQueue<>());
 
-    public static final ExecutorService PROTOSTUFF_EXECUTOR = new ThreadPoolExecutor(1, 100, 5L,
+    public static final ExecutorService PROTOSTUFF_EXECUTOR = new ThreadPoolExecutor(8, 100, 5L,
             TimeUnit.SECONDS, new LinkedBlockingQueue<>());
 
 
