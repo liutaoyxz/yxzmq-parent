@@ -24,40 +24,41 @@ public abstract class AbstractYxzMessage implements Message {
     /**
      * 消息id,经过封装,包含producerId 对象等
      **/
-    private MessageId messageId;
+    protected MessageId messageId;
 
     /**
      * 消息发送时的时间,不是创建的时间
      **/
-    private Long timestamp;
+    protected Long timestamp;
 
     /**
      * 发送地址
      **/
-    private Destination destination;
+    protected Destination destination;
 
     /**
      * 回复地址
      **/
-    private Destination replyDestination;
+    protected Destination replyDestination;
 
     /**
      * 过期时间
      **/
-    private Long expiration;
+    protected Long expiration;
 
     /** 是否可写 **/
-    private boolean writable = true;
+    protected boolean writable = true;
 
     /**
      * properties
      **/
-    private Map<String, MessageProperty> properties = new HashMap<>();
+    protected Map<String, MessageProperty> properties = new HashMap<>();
 
     /**
      * 优先级
      */
-    private int priority = Message.DEFAULT_PRIORITY;
+    protected int priority = Message.DEFAULT_PRIORITY;
+
 
     @Override
     public String getJMSMessageID() throws JMSException {
