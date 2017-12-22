@@ -468,6 +468,17 @@ public abstract class AbstractYxzMessage implements Message {
     }
 
     /**
+     * 返回消息是否为指定的类型
+     * @param c
+     * @return
+     * @throws JMSException
+     */
+    @Override
+    public boolean isBodyAssignableTo(Class c) throws JMSException {
+        return false;
+    }
+
+    /**
      * 消息的property 属性对象
      */
     public static class MessageProperty<T> {
