@@ -16,4 +16,12 @@ public class MessagePropertyTest {
         System.out.println(o.getClass() == Integer.class);
     }
 
+    @Test
+    public void msgTest() throws Exception{
+        YxzTextMessage text = new YxzTextMessage("fuck");
+        text.setBooleanProperty("boolean",false);
+        System.out.println(text.getBooleanProperty("b"));
+
+    }
+
 }

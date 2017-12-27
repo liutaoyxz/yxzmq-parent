@@ -67,7 +67,7 @@ public class YxzNettySession extends AbstractSession {
         if (StringUtils.isBlank(text)){
             throw new NullPointerException();
         }
-        return new YxzTextMessage(text);
+        return new YxzDefaultTextMessage(text);
     }
 
     /****************************** transaction *********************************/
@@ -300,7 +300,7 @@ public class YxzNettySession extends AbstractSession {
         }
         MessageListener l = listeners.poll();
         if (l != null){
-            l.onMessage(new YxzTextMessage(text));
+            l.onMessage(new YxzDefaultTextMessage(text));
             listeners.add(l);
             return true;
         }

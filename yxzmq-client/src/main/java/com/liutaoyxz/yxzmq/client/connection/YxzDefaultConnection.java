@@ -2,7 +2,7 @@ package com.liutaoyxz.yxzmq.client.connection;
 
 import com.liutaoyxz.yxzmq.client.session.YxzDefaultSession;
 import com.liutaoyxz.yxzmq.client.session.YxzQueueConsumer;
-import com.liutaoyxz.yxzmq.client.session.YxzTextMessage;
+import com.liutaoyxz.yxzmq.client.session.YxzDefaultTextMessage;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;
@@ -414,14 +414,14 @@ public class YxzDefaultConnection extends AbstractConnection {
                 CopyOnWriteArrayList<TopicSubscriber> subscribers = this.topicListener.get(title);
                 for (TopicSubscriber s : subscribers){
                     MessageListener listener = s.getMessageListener();
-                    listener.onMessage(new YxzTextMessage(text));
+                    listener.onMessage(new YxzDefaultTextMessage(text));
                 }
             }else {
                 //队列 TODO 这里有可能已经没有消费者了,暂时先不处理
                 LinkedBlockingQueue<YxzQueueConsumer> consumers = this.queueListener.get(title);
                 YxzQueueConsumer consumer = consumers.take();
                 MessageListener listener = consumer.getMessageListener();
-                listener.onMessage(new YxzTextMessage(text));
+                listener.onMessage(new YxzDefaultTextMessage(text));
                 consumers.add(consumer);
             }
         }catch (JMSException e){

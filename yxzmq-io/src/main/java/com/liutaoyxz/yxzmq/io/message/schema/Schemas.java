@@ -17,4 +17,6 @@ public interface Schemas {
 
     Schema MESSAGE_ID = new MessageIdSchema();
 
+    Schema DESTINATION_ID = new DestinationIdSchema();
+
 }

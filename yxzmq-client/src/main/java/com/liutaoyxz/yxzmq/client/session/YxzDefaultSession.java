@@ -144,7 +144,7 @@ public class YxzDefaultSession extends AbstractSession {
         if(StringUtils.isBlank(text)){
             throw new NullPointerException();
         }
-        return new YxzTextMessage(text);
+        return new YxzDefaultTextMessage(text);
     }
 
 

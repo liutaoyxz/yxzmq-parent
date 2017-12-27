@@ -4,6 +4,7 @@ import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.jms.*;
+import javax.jms.Queue;
 
 import java.util.*;
 
@@ -52,13 +53,32 @@ public abstract class AbstractYxzMessage implements Message {
     /**
      * properties
      **/
-    protected Map<String, MessageProperty> properties = new HashMap<>();
+    protected Map<String, MessageProperty> properties;
 
     /**
      * 优先级
      */
     protected int priority = Message.DEFAULT_PRIORITY;
 
+    /**
+     * message 类型
+     */
+    private Class<? extends AbstractYxzMessage> messageClass;
+
+    /**
+     * 地址类型
+     */
+    private Class<? extends Destination> destinationClass;
+
+    public AbstractYxzMessage(Class<? extends AbstractYxzMessage> messageClass) {
+        this.messageClass = messageClass;
+    }
+
+    public Class<? extends AbstractYxzMessage> getMessageClass(){
+        return messageClass;
+    }
+
+    public AbstractYxzMessage(){}
 
     @Override
     public String getJMSMessageID() throws JMSException {
@@ -97,6 +117,21 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public void setJMSDestination(Destination destination) throws JMSException {
+        if (destination == null){
+            throw new IllegalArgumentException("destination is null");
+        }
+        this.setDestination(destination);
+    }
+
+    private synchronized void setDestination(Destination destination) throws JMSException {
+        checkWritable();
+        if (destination instanceof Queue){
+            this.destinationClass = Queue.class;
+        }else if (destination instanceof Topic){
+            this.destinationClass = Topic.class;
+        }else {
+            throw new IllegalArgumentException("destination type error,type is "+ destination.getClass().getName());
+        }
         this.destination = destination;
     }
 
@@ -138,15 +173,17 @@ public abstract class AbstractYxzMessage implements Message {
     @Override
     public boolean propertyExists(String name) throws JMSException {
         checkPropertyName(name);
+        if (properties == null){
+            return false;
+        }
         return properties.containsKey(name);
     }
 
     @Override
     public boolean getBooleanProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
-            throw new NullPointerException("property [" + name +  "] is null");
+            return false;
         }
         Class aClass = property.getType();
         Object value = property.getValue();
@@ -161,10 +198,9 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public byte getByteProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
-            throw new NullPointerException("property [" + name +  "] is null");
+            throw new NumberFormatException("byte value was null");
         }
         Class aClass = property.getType();
         Object value = property.getValue();
@@ -179,10 +215,9 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public short getShortProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
-            throw new NullPointerException("property [" + name +  "] is null");
+            throw new NumberFormatException("short value was null");
         }
         Class aClass = property.getType();
         Object value = property.getValue();
@@ -200,10 +235,9 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public int getIntProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
-            throw new NullPointerException("property [" + name +  "] is null");
+            throw new NumberFormatException("int value was null");
         }
         Class aClass = property.getType();
         Object value = property.getValue();
@@ -224,10 +258,9 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public long getLongProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
-            throw new NullPointerException("property [" + name +  "] is null");
+            throw new NumberFormatException("long value was null");
         }
         Class aClass = property.getType();
         Object value = property.getValue();
@@ -251,10 +284,9 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public float getFloatProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
-            throw new NullPointerException("property [" + name +  "] is null");
+            throw new NumberFormatException("float value was null");
         }
         Class aClass = property.getType();
         Object value = property.getValue();
@@ -269,10 +301,9 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public double getDoubleProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
-            throw new NullPointerException("property [" + name +  "] is null");
+            throw new NumberFormatException("double value was null");
         }
         Class aClass = property.getType();
         Object value = property.getValue();
@@ -290,8 +321,7 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public String getStringProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
             return null;
         }
@@ -305,13 +335,20 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public Object getObjectProperty(String name) throws JMSException {
-        checkPropertyName(name);
-        MessageProperty property = properties.get(name);
+        MessageProperty property = getProperty(name);
         if (property == null){
             return null;
         }
         Object value = property.getValue();
         return value;
+    }
+
+    private MessageProperty getProperty(String name){
+        checkPropertyName(name);
+        if (properties == null){
+            return null;
+        }
+        return properties.get(name);
     }
 
     @Override
@@ -322,17 +359,11 @@ public abstract class AbstractYxzMessage implements Message {
     }
 
 
-    private Map<String,MessageProperty> getProperties(){
-        if (properties.isEmpty()){
-            return Collections.EMPTY_MAP;
-        }
-        return Collections.unmodifiableMap(properties);
-    }
-
     @Override
     public void setBooleanProperty(String name, boolean value) throws JMSException {
         checkWritable();
         checkPropertyName(name);
+        checkProperties();
         properties.put(name,new MessageProperty(Boolean.class,name,new Boolean(value)));
     }
 
@@ -340,6 +371,7 @@ public abstract class AbstractYxzMessage implements Message {
     public void setByteProperty(String name, byte value) throws JMSException {
         checkWritable();
         checkPropertyName(name);
+        checkProperties();
         properties.put(name,new MessageProperty(Byte.class,name,new Byte(value)));
     }
 
@@ -347,6 +379,7 @@ public abstract class AbstractYxzMessage implements Message {
     public void setShortProperty(String name, short value) throws JMSException {
         checkWritable();
         checkPropertyName(name);
+        checkProperties();
         properties.put(name,new MessageProperty(Short.class,name,new Short(value)));
     }
 
@@ -354,6 +387,7 @@ public abstract class AbstractYxzMessage implements Message {
     public void setIntProperty(String name, int value) throws JMSException {
         checkWritable();
         checkPropertyName(name);
+        checkProperties();
         properties.put(name,new MessageProperty(Integer.class,name,new Integer(value)));
     }
 
@@ -361,6 +395,7 @@ public abstract class AbstractYxzMessage implements Message {
     public void setLongProperty(String name, long value) throws JMSException {
         checkWritable();
         checkPropertyName(name);
+        checkProperties();
         properties.put(name,new MessageProperty(Long.class,name,new Long(value)));
     }
 
@@ -368,6 +403,7 @@ public abstract class AbstractYxzMessage implements Message {
     public void setFloatProperty(String name, float value) throws JMSException {
         checkWritable();
         checkPropertyName(name);
+        checkProperties();
         properties.put(name,new MessageProperty(Float.class,name,new Float(value)));
     }
 
@@ -375,6 +411,7 @@ public abstract class AbstractYxzMessage implements Message {
     public void setDoubleProperty(String name, double value) throws JMSException {
         checkWritable();
         checkPropertyName(name);
+        checkProperties();
         properties.put(name,new MessageProperty(Double.class,name,new Double(value)));
     }
 
@@ -382,12 +419,15 @@ public abstract class AbstractYxzMessage implements Message {
     public void setStringProperty(String name, String value) throws JMSException {
         checkWritable();
         checkPropertyName(name);
+        checkProperties();
         properties.put(name,new MessageProperty(String.class,name,value));
     }
 
     @Override
     public void setObjectProperty(String name, Object value) throws JMSException {
+        checkWritable();
         checkPropertyName(name);
+        checkProperties();
         Class type = checkObjectProperty(value);
         MessageProperty property = new MessageProperty(type, name, value);
         properties.put(name, property);
@@ -434,9 +474,22 @@ public abstract class AbstractYxzMessage implements Message {
         }
     }
 
-    private void checkWritable() throws MessageNotWriteableException {
+    protected void checkWritable() throws MessageNotWriteableException {
         if (!writable){
             throw new MessageNotWriteableException("message is readOnly");
+        }
+    }
+
+    private Map<String,MessageProperty> getProperties(){
+        if (properties == null || properties.isEmpty()){
+            return Collections.EMPTY_MAP;
+        }
+        return Collections.unmodifiableMap(properties);
+    }
+
+    private synchronized void checkProperties(){
+        if (properties == null){
+            properties = new HashMap<>(10);
         }
     }
 
@@ -476,6 +529,56 @@ public abstract class AbstractYxzMessage implements Message {
     @Override
     public boolean isBodyAssignableTo(Class c) throws JMSException {
         return false;
+    }
+
+    @Override
+    public void acknowledge() throws JMSException {
+
+    }
+
+    @Override
+    public byte[] getJMSCorrelationIDAsBytes() throws JMSException {
+        return new byte[0];
+    }
+
+    @Override
+    public void setJMSCorrelationIDAsBytes(byte[] correlationID) throws JMSException {
+
+    }
+
+    @Override
+    public void setJMSCorrelationID(String correlationID) throws JMSException {
+
+    }
+
+    @Override
+    public String getJMSCorrelationID() throws JMSException {
+        return null;
+    }
+
+    @Override
+    public boolean getJMSRedelivered() throws JMSException {
+        return false;
+    }
+
+    @Override
+    public void setJMSRedelivered(boolean redelivered) throws JMSException {
+
+    }
+
+    @Override
+    public long getJMSDeliveryTime() throws JMSException {
+        return 0;
+    }
+
+    @Override
+    public void setJMSDeliveryTime(long deliveryTime) throws JMSException {
+
+    }
+
+    @Override
+    public <T> T getBody(Class<T> c) throws JMSException {
+        return null;
     }
 
     /**

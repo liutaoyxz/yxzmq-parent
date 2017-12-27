@@ -8,12 +8,12 @@ import javax.jms.TextMessage;
  * @Date 下午7:30 2017/11/18
  * @Description:
  */
-public class YxzTextMessage extends AbstratMessage implements TextMessage{
+public class YxzDefaultTextMessage extends AbstratMessage implements TextMessage{
 
 
     private String text;
 
-    public YxzTextMessage(String text){
+    public YxzDefaultTextMessage(String text){
         try {
             this.setJMSTimestamp(System.currentTimeMillis());
         } catch (JMSException e) {
