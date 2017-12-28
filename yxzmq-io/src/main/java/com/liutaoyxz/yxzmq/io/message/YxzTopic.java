@@ -15,11 +15,16 @@ public class YxzTopic extends AbstractDestination implements Topic {
     public YxzTopic() {
     }
 
-    public YxzTopic(String topicName, DestinationId destinationId) {
-        this(destinationId,YxzTopic.class,topicName);
+    public YxzTopic(String topicName) {
+        super(AbstractDestination.YXZ_TOPIC_CLASS);
+        this.topicName = topicName;
     }
 
-    private YxzTopic(DestinationId destinationId, Class<? extends AbstractDestination> destinationClass, String topicName) {
+    public YxzTopic(String topicName, DestinationId destinationId) {
+        this(destinationId,AbstractDestination.YXZ_TOPIC_CLASS,topicName);
+    }
+
+    private YxzTopic(DestinationId destinationId, String destinationClass, String topicName) {
         super(destinationId, destinationClass);
         this.topicName = topicName;
     }

@@ -4,6 +4,8 @@ import com.liutaoyxz.yxzmq.io.message.YxzTextMessage;
 import io.protostuff.Input;
 import io.protostuff.Output;
 import io.protostuff.Schema;
+import io.protostuff.runtime.ClassSchema;
+import io.protostuff.runtime.DefaultIdStrategy;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,42 +30,36 @@ public class YxzTextMessageSchema implements Schema<YxzTextMessage> {
         NAME_MAP.put("properties",7);
         NAME_MAP.put("priority",8);
         NAME_MAP.put("messageClass",9);
+        NAME_MAP.put("text",10);
     }
 
 
     @Override
     public String getFieldName(int number) {
-        return null;
-    }
-
-    @Override
-    public int getFieldNumber(String name) {
-        return 0;
-    }
-
-    @Override
-    public boolean isInitialized(YxzTextMessage message) {
-        return false;
-    }
-
-    @Override
-    public YxzTextMessage newMessage() {
-        return null;
-    }
-
-    @Override
-    public String messageName() {
-        return null;
-    }
-
-    @Override
-    public String messageFullName() {
-        return null;
-    }
-
-    @Override
-    public Class<? super YxzTextMessage> typeClass() {
-        return null;
+        switch (number){
+            case 1:
+                return "messageId";
+            case 2:
+                return "timestamp";
+            case 3:
+                return "destination";
+            case 4:
+                return "replyDestination";
+            case 5:
+                return "expiration";
+            case 6:
+                return "writable";
+            case 7:
+                return "properties";
+            case 8:
+                return "priority";
+            case 9:
+                return "messageClass";
+            case 10:
+                return "text";
+            default:
+                return null;
+        }
     }
 
     @Override
@@ -73,6 +69,45 @@ public class YxzTextMessageSchema implements Schema<YxzTextMessage> {
 
     @Override
     public void writeTo(Output output, YxzTextMessage message) throws IOException {
+        if (message.getMessageId() != null){
+            output.writeObject(1,message.getMessageId(),Schemas.MESSAGE_ID,false);
+        }
+        output.writeInt64(2,message.getTimestamp(),false);
+        if (message.getDestination() != null){
 
+        }
+        if (message.getMessageClass() != null){
+            output.writeString(9,message.getMessageClass(),false);
+        }
+    }
+
+    @Override
+    public int getFieldNumber(String name) {
+        return NAME_MAP.get(name);
+    }
+
+    @Override
+    public boolean isInitialized(YxzTextMessage message) {
+        return message != null && message.getMessageClass() != null;
+    }
+
+    @Override
+    public YxzTextMessage newMessage() {
+        return new YxzTextMessage();
+    }
+
+    @Override
+    public String messageName() {
+        return YxzTextMessage.class.getSimpleName();
+    }
+
+    @Override
+    public String messageFullName() {
+        return YxzTextMessage.class.getName();
+    }
+
+    @Override
+    public Class<? super YxzTextMessage> typeClass() {
+        return YxzTextMessage.class;
     }
 }

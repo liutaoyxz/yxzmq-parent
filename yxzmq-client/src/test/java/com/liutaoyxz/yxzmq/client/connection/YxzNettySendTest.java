@@ -43,7 +43,7 @@ public class YxzNettySendTest {
                     "message-message-message-message-message-message-message-message-message-" +
                     "message-message-message-message-message-message-message-message-message-" +
                     "message-message-message-message-message-message-message-message-message-" +
-                    "message-message-message-message-message-message-message-");
+                    "message-message-message-message-message-message-message-xxx");
             producer.send(message);
             System.out.println("send --> "+message.getText());
         }

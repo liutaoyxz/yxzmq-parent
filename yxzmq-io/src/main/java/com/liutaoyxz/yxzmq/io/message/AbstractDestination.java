@@ -9,23 +9,31 @@ import javax.jms.Destination;
  */
 public class AbstractDestination implements Destination {
 
+    public static final String YXZ_TOPIC_CLASS = "yxzTopic";
+
+    public static final String YXZ_QUEUE_CLASS = "yxzQueue";
+
     private DestinationId destinationId;
 
-    private Class<? extends AbstractDestination> destinationClass;
+    private String destinationClass;
 
     public AbstractDestination() {
     }
 
-    public AbstractDestination(DestinationId destinationId,Class<? extends AbstractDestination> destinationClass) {
+    protected AbstractDestination(String destinationClass){
+        this.destinationClass = destinationClass;
+    }
+
+    public AbstractDestination(DestinationId destinationId,String destinationClass) {
         this.destinationId = destinationId;
         this.destinationClass = destinationClass;
     }
 
-    public Class<? extends AbstractDestination> getDestinationClass() {
+    public String getDestinationClass() {
         return destinationClass;
     }
 
-    public void setDestinationClass(Class<? extends AbstractDestination> destinationClass) {
+    public void setDestinationClass(String destinationClass) {
         this.destinationClass = destinationClass;
     }
 

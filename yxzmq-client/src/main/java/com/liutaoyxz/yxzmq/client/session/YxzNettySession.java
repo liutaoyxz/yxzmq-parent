@@ -2,6 +2,7 @@ package com.liutaoyxz.yxzmq.client.session;
 
 import com.liutaoyxz.yxzmq.client.YxzClientContext;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
+import com.liutaoyxz.yxzmq.io.message.YxzTopic;
 import com.liutaoyxz.yxzmq.io.protocol.MessageDesc;
 import com.liutaoyxz.yxzmq.io.protocol.Metadata;
 import com.liutaoyxz.yxzmq.io.protocol.ProtocolBean;

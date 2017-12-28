@@ -9,7 +9,7 @@ public class DestinationId {
 
     private String id;
 
-    private MessageId messageId;
+    private SessionId sessionId;
 
     public String id() {
         return id;
@@ -19,19 +19,19 @@ public class DestinationId {
         this.id = id;
     }
 
-    public MessageId getMessageId() {
-        return messageId;
+    public SessionId getSessionId() {
+        return sessionId;
     }
 
-    public void setMessageId(MessageId messageId) {
-        this.messageId = messageId;
+    public void setSessionId(SessionId sessionId) {
+        this.sessionId = sessionId;
     }
 
     @Override
     public String toString() {
         return "DestinationId{" +
                 "id='" + id + '\'' +
-                ", messageId=" + messageId +
+                ", sessionId=" + sessionId +
                 '}';
     }
 }

@@ -3,6 +3,7 @@ package com.liutaoyxz.yxzmq.io.message.schema;
 import com.liutaoyxz.yxzmq.io.message.DestinationId;
 import com.liutaoyxz.yxzmq.io.message.MessageId;
 import com.liutaoyxz.yxzmq.io.message.ProducerId;
+import com.liutaoyxz.yxzmq.io.message.SessionId;
 import io.protostuff.Input;
 import io.protostuff.Output;
 import io.protostuff.Schema;
@@ -22,7 +23,7 @@ public class DestinationIdSchema implements Schema<DestinationId> {
 
     static {
         NAME_MAP.put("id",1);
-        NAME_MAP.put("messageId",2);
+        NAME_MAP.put("sessionId",2);
     }
 
 
@@ -37,7 +38,7 @@ public class DestinationIdSchema implements Schema<DestinationId> {
                     message.setId(input.readString());
                     break;
                 case 2:
-                    message.setMessageId(input.mergeObject((MessageId) null,Schemas.MESSAGE_ID));
+                    message.setSessionId(input.mergeObject((SessionId) null,Schemas.SESSION_ID_SCHEMA));
                     break;
                 default:
                     input.handleUnknownField(number,this);
@@ -47,8 +48,8 @@ public class DestinationIdSchema implements Schema<DestinationId> {
 
     @Override
     public void writeTo(Output output, DestinationId message) throws IOException {
-        if (message.getMessageId() != null){
-            output.writeObject(2,message.getMessageId(),Schemas.MESSAGE_ID,false);
+        if (message.getSessionId() != null){
+            output.writeObject(2,message.getSessionId(),Schemas.SESSION_ID_SCHEMA,false);
         }
         if (message.id() != null){
             output.writeString(1,message.id(),false);
@@ -61,7 +62,7 @@ public class DestinationIdSchema implements Schema<DestinationId> {
             case 1:
                 return "id";
             case 2:
-                return "messageId";
+                return "sessionId";
             default:
                 return null;
         }
@@ -74,7 +75,7 @@ public class DestinationIdSchema implements Schema<DestinationId> {
 
     @Override
     public boolean isInitialized(DestinationId message) {
-        return message != null && message.getMessageId() != null;
+        return message != null && message.getSessionId() != null;
     }
 
     @Override

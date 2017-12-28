@@ -22,6 +22,17 @@ public abstract class AbstractYxzMessage implements Message {
 
     public static final int MAX_PRIORITY = 10;
 
+    public static final String STREAM_MESSAGE = "stream";
+
+    public static final String OBJECT_MESSAGE = "object";
+
+    public static final String MAP_MESSAGE = "map";
+
+    public static final String BYTES_MESSAGE = "bytes";
+
+    public static final String TEXT_MESSAGE = "text";
+
+
     /**
      * 消息id,经过封装,包含producerId 对象等
      **/
@@ -35,12 +46,12 @@ public abstract class AbstractYxzMessage implements Message {
     /**
      * 发送地址
      **/
-    protected Destination destination;
+    protected AbstractDestination destination;
 
     /**
      * 回复地址
      **/
-    protected Destination replyDestination;
+    protected AbstractDestination replyDestination;
 
     /**
      * 过期时间
@@ -63,19 +74,66 @@ public abstract class AbstractYxzMessage implements Message {
     /**
      * message 类型
      */
-    private Class<? extends AbstractYxzMessage> messageClass;
+    private String messageClass;
 
-    /**
-     * 地址类型
-     */
-    private Class<? extends Destination> destinationClass;
+    public String getMessageClass() {
+        return messageClass;
+    }
 
-    public AbstractYxzMessage(Class<? extends AbstractYxzMessage> messageClass) {
+    public void setMessageClass(String messageClass) {
         this.messageClass = messageClass;
     }
 
-    public Class<? extends AbstractYxzMessage> getMessageClass(){
-        return messageClass;
+    public Long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public AbstractDestination getDestination() {
+        return destination;
+    }
+
+    public void setDestination(AbstractDestination destination) {
+        this.destination = destination;
+    }
+
+    public AbstractDestination getReplyDestination() {
+        return replyDestination;
+    }
+
+    public void setReplyDestination(AbstractDestination replyDestination) {
+        this.replyDestination = replyDestination;
+    }
+
+    public Long getExpiration() {
+        return expiration;
+    }
+
+    public void setExpiration(Long expiration) {
+        this.expiration = expiration;
+    }
+
+    public boolean isWritable() {
+        return writable;
+    }
+
+    public void setWritable(boolean writable) {
+        this.writable = writable;
+    }
+
+    public void setProperties(Map<String, MessageProperty> properties) {
+        this.properties = properties;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public AbstractYxzMessage(){}
@@ -107,7 +165,7 @@ public abstract class AbstractYxzMessage implements Message {
 
     @Override
     public void setJMSReplyTo(Destination replyTo) throws JMSException {
-        this.replyDestination = replyTo;
+        this.replyDestination = (AbstractDestination) replyTo;
     }
 
     @Override
@@ -125,14 +183,7 @@ public abstract class AbstractYxzMessage implements Message {
 
     private synchronized void setDestination(Destination destination) throws JMSException {
         checkWritable();
-        if (destination instanceof Queue){
-            this.destinationClass = Queue.class;
-        }else if (destination instanceof Topic){
-            this.destinationClass = Topic.class;
-        }else {
-            throw new IllegalArgumentException("destination type error,type is "+ destination.getClass().getName());
-        }
-        this.destination = destination;
+        this.destination = (AbstractDestination) destination;
     }
 
     @Override
@@ -579,6 +630,14 @@ public abstract class AbstractYxzMessage implements Message {
     @Override
     public <T> T getBody(Class<T> c) throws JMSException {
         return null;
+    }
+
+    public MessageId getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(MessageId messageId) {
+        this.messageId = messageId;
     }
 
     /**

@@ -2,6 +2,7 @@ package com.liutaoyxz.yxzmq.client.session;
 
 import com.liutaoyxz.yxzmq.client.connection.YxzDefaultConnection;
 import com.liutaoyxz.yxzmq.common.enums.JMSErrorEnum;
+import com.liutaoyxz.yxzmq.io.message.YxzTopic;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
