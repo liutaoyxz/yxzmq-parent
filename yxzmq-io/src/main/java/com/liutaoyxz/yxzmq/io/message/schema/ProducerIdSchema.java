@@ -37,7 +37,7 @@ public class ProducerIdSchema implements Schema<ProducerId> {
                     message.setId(input.readString());
                     break;
                 case 2:
-                    message.setSessionId(input.mergeObject((SessionId)null,Schemas.SESSION_ID_SCHEMA));
+                    message.setSessionId(input.mergeObject((SessionId)null,Schemas.SESSION_ID));
                     break;
                 default:
                     input.handleUnknownField(number,this);
@@ -51,7 +51,7 @@ public class ProducerIdSchema implements Schema<ProducerId> {
             output.writeString(1,message.id(),false);
         }
         if (message.getSessionId() != null){
-            output.writeObject(2,message.getSessionId(),Schemas.SESSION_ID_SCHEMA,false);
+            output.writeObject(2,message.getSessionId(),Schemas.SESSION_ID,false);
         }
     }
 

@@ -9,14 +9,16 @@ import io.protostuff.Schema;
  */
 public interface Schemas {
 
-    Schema CONNECTION_ID_SCHEMA = new ConnectionIdSchema();
+    Schema CONNECTION_ID = new ConnectionIdSchema();
 
-    Schema SESSION_ID_SCHEMA = new SessionIdSchema();
+    Schema SESSION_ID = new SessionIdSchema();
 
-    Schema PRODUCER_ID_SCHEMA = new ProducerIdSchema();
+    Schema PRODUCER_ID = new ProducerIdSchema();
 
     Schema MESSAGE_ID = new MessageIdSchema();
 
     Schema DESTINATION_ID = new DestinationIdSchema();
+
+    Schema TOPIC = new YxzTopicSchema();
 
 }

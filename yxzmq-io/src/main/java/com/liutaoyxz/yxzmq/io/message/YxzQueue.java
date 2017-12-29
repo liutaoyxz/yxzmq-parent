@@ -31,6 +31,13 @@ public class YxzQueue extends AbstractDestination implements Queue {
 
     @Override
     public String getQueueName() throws JMSException {
-        return null;
+        return this.queueName;
+    }
+
+    @Override
+    public String toString() {
+        return "YxzQueue{" +
+                "queueName='" + queueName + '\'' +
+                '}';
     }
 }

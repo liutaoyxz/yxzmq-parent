@@ -17,7 +17,7 @@ public class YxzTextMessage extends AbstractYxzMessage implements TextMessage {
 
 
     public YxzTextMessage(String text) {
-        super(YxzTextMessage.class);
+        super(AbstractYxzMessage.TEXT_MESSAGE);
         if (StringUtils.isBlank(text)){
             throw new IllegalArgumentException("text is blank");
         }
@@ -25,6 +25,7 @@ public class YxzTextMessage extends AbstractYxzMessage implements TextMessage {
     }
 
     public YxzTextMessage() {
+        super(AbstractYxzMessage.TEXT_MESSAGE);
     }
 
     @Override

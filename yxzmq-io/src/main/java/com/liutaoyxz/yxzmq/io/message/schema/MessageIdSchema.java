@@ -47,7 +47,7 @@ public class MessageIdSchema implements Schema<MessageId> {
                     message.setId(input.readString());
                     break;
                 case 2:
-                    message.setProducerId(input.mergeObject((ProducerId)null,Schemas.PRODUCER_ID_SCHEMA));
+                    message.setProducerId(input.mergeObject((ProducerId)null,Schemas.PRODUCER_ID));
                     break;
                 default:
                     input.handleUnknownField(number,this);
@@ -61,7 +61,7 @@ public class MessageIdSchema implements Schema<MessageId> {
             output.writeString(1,message.id(),false);
         }
         if (message.getProducerId() != null){
-            output.writeObject(2,message.getProducerId(),Schemas.PRODUCER_ID_SCHEMA,false);
+            output.writeObject(2,message.getProducerId(),Schemas.PRODUCER_ID,false);
         }
     }
 

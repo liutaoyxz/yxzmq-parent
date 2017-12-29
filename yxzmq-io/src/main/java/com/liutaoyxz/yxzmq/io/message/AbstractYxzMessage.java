@@ -138,6 +138,10 @@ public abstract class AbstractYxzMessage implements Message {
 
     public AbstractYxzMessage(){}
 
+    public AbstractYxzMessage(String messageClass) {
+        this.messageClass = messageClass;
+    }
+
     @Override
     public String getJMSMessageID() throws JMSException {
         return null;

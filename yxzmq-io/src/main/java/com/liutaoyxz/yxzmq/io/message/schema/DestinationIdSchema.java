@@ -1,8 +1,6 @@
 package com.liutaoyxz.yxzmq.io.message.schema;
 
 import com.liutaoyxz.yxzmq.io.message.DestinationId;
-import com.liutaoyxz.yxzmq.io.message.MessageId;
-import com.liutaoyxz.yxzmq.io.message.ProducerId;
 import com.liutaoyxz.yxzmq.io.message.SessionId;
 import io.protostuff.Input;
 import io.protostuff.Output;
@@ -38,7 +36,7 @@ public class DestinationIdSchema implements Schema<DestinationId> {
                     message.setId(input.readString());
                     break;
                 case 2:
-                    message.setSessionId(input.mergeObject((SessionId) null,Schemas.SESSION_ID_SCHEMA));
+                    message.setSessionId(input.mergeObject((SessionId) null,Schemas.SESSION_ID));
                     break;
                 default:
                     input.handleUnknownField(number,this);
@@ -49,7 +47,7 @@ public class DestinationIdSchema implements Schema<DestinationId> {
     @Override
     public void writeTo(Output output, DestinationId message) throws IOException {
         if (message.getSessionId() != null){
-            output.writeObject(2,message.getSessionId(),Schemas.SESSION_ID_SCHEMA,false);
+            output.writeObject(2,message.getSessionId(),Schemas.SESSION_ID,false);
         }
         if (message.id() != null){
             output.writeString(1,message.id(),false);

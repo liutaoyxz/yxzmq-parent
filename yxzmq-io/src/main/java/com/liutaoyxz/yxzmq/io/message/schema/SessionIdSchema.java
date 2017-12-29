@@ -48,7 +48,7 @@ public class SessionIdSchema implements Schema<SessionId>{
                     message.setId(input.readString());
                     break;
                 case 2:
-                    message.setConnectionId(input.mergeObject((ConnectionId) null,Schemas.CONNECTION_ID_SCHEMA));
+                    message.setConnectionId(input.mergeObject((ConnectionId) null,Schemas.CONNECTION_ID));
                     break;
                 default:
                     input.handleUnknownField(number,this);
@@ -64,7 +64,7 @@ public class SessionIdSchema implements Schema<SessionId>{
             output.writeString(1,message.id(),false);
         }
         if (message.getConnectionId() != null){
-            output.writeObject(2,message.getConnectionId(),Schemas.CONNECTION_ID_SCHEMA,false);
+            output.writeObject(2,message.getConnectionId(),Schemas.CONNECTION_ID,false);
         }
     }
     @Override

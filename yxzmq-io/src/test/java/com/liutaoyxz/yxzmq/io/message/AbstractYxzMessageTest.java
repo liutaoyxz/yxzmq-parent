@@ -287,6 +287,12 @@ public class AbstractYxzMessageTest {
 
     @Test
     public void getPropertyNames() throws Exception {
+        String s = "liutao";
+        for (char c : s.toCharArray()){
+            System.out.println((int)c);
+        }
+        char c = new Character('.');
+        System.out.println((int)c);
     }
 
 }
